@@ -1,3 +1,4 @@
+// Main Express app: serves static landing pages and accepts lead/event API requests.
 const express = require('express');
 const helmet = require('helmet');
 const path = require('path');
@@ -5,6 +6,8 @@ const crypto = require('crypto');
 const { validateLeadInput, validateEventInput } = require('./utils/validators');
 const { appendNdjson } = require('./services/fileStore');
 const { pushLeadToCrm } = require('./services/crm');
+const { isSupabaseConfigured, storeLeadInSupabase, storeEventInSupabase } = require('./services/supabase');
+const { getCmsBootstrap } = require('./services/cms');
 const config = require('./config');
 
 const app = express();
@@ -30,7 +33,21 @@ app.get('/reviews', servePage('reviews.html'));
 app.get('/about', servePage('about.html'));
 app.get('/contacts', servePage('contacts.html'));
 app.get('/privacy', servePage('privacy.html'));
-app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/api/cms/bootstrap', async (req, res) => {
+  const pageSlug = String(req.query.page || 'home').trim();
+  const bootstrap = await getCmsBootstrap(config, pageSlug);
+
+  return res.json({
+    ok: true,
+    ...bootstrap,
+  });
+});
+
+app.get('/health', (_req, res) => res.json({
+  status: 'ok',
+  timestamp: new Date().toISOString(),
+  supabase_enabled: isSupabaseConfigured(config),
+}));
 
 app.post('/api/lead', async (req, res) => {
   const validated = validateLeadInput(req.body, config.defaultCity);
@@ -66,10 +83,18 @@ app.post('/api/lead', async (req, res) => {
     crmResult = { delivered: false, reason: 'webhook_error', details: error.message };
   }
 
+  let supabaseResult = { enabled: false, stored: false, reason: 'supabase_not_configured' };
+  try {
+    supabaseResult = await storeLeadInSupabase(config, lead);
+  } catch (error) {
+    supabaseResult = { enabled: true, stored: false, reason: 'supabase_runtime_error', details: error.message };
+  }
+
   return res.status(201).json({
     ok: true,
     lead_id: lead.id,
-    crm: crmResult
+    crm: crmResult,
+    supabase: supabaseResult,
   });
 });
 
@@ -92,7 +117,14 @@ app.post('/api/event', async (req, res) => {
     return res.status(500).json({ ok: false, error: 'failed_to_store_event', details: error.message });
   }
 
-  return res.status(201).json({ ok: true, event_id: event.id });
+  let supabaseResult = { enabled: false, stored: false, reason: 'supabase_not_configured' };
+  try {
+    supabaseResult = await storeEventInSupabase(config, event);
+  } catch (error) {
+    supabaseResult = { enabled: true, stored: false, reason: 'supabase_runtime_error', details: error.message };
+  }
+
+  return res.status(201).json({ ok: true, event_id: event.id, supabase: supabaseResult });
 });
 
 app.use((_req, res) => {

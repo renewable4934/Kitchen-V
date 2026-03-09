@@ -19,6 +19,26 @@ const validLead = {
   timestamp: new Date().toISOString()
 };
 
+test('GET /health shows if Supabase is configured', async () => {
+  const response = await request(app)
+    .get('/health')
+    .expect(200);
+
+  assert.equal(response.body.status, 'ok');
+  assert.equal(response.body.supabase_enabled, false);
+});
+
+test('GET /api/cms/bootstrap returns fallback CMS data', async () => {
+  const response = await request(app)
+    .get('/api/cms/bootstrap?page=kuhni-rostov')
+    .expect(200);
+
+  assert.equal(response.body.ok, true);
+  assert.equal(response.body.page_slug, 'kuhni-rostov');
+  assert.equal(response.body.settings.brandName, 'Kitchen_V');
+  assert.equal(response.body.page.hero.tag, 'Кухни Ростов-на-Дону');
+});
+
 test('POST /api/lead accepts valid payload', async () => {
   const response = await request(app)
     .post('/api/lead')
@@ -27,6 +47,7 @@ test('POST /api/lead accepts valid payload', async () => {
 
   assert.equal(response.body.ok, true);
   assert.equal(typeof response.body.lead_id, 'string');
+  assert.equal(response.body.supabase.enabled, false);
 });
 
 test('POST /api/lead rejects invalid payload', async () => {
@@ -55,6 +76,7 @@ test('POST /api/event accepts whitelisted event', async () => {
 
   assert.equal(response.body.ok, true);
   assert.equal(typeof response.body.event_id, 'string');
+  assert.equal(response.body.supabase.enabled, false);
 });
 
 test('POST /api/event rejects unsupported event', async () => {

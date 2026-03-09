@@ -1,14 +1,21 @@
 (function () {
   const funnelType = document.body.dataset.funnel || null;
-  const pageTitle = document.title;
+  const pageSlug = document.body.dataset.pageSlug || getPageSlug();
   const STORAGE_KEY = 'kitchen_v_attribution';
   const CLIENT_KEY = 'kitchen_v_client_id';
 
-  const phoneMapBySource = {
-    yandex: '+7 (863) 201-10-11',
-    vk: '+7 (863) 201-10-22',
-    google: '+7 (863) 201-10-33'
+  let cmsSettings = {
+    defaultPhone: '+7 (863) 200-00-00',
+    whatsappPhone: '78632000000',
+    whatsappMessage: 'Здравствуйте, хочу расчет по проекту',
+    phonesBySource: {
+      yandex: '+7 (863) 201-10-11',
+      vk: '+7 (863) 201-10-22',
+      google: '+7 (863) 201-10-33',
+    },
   };
+
+  let cmsPage = null;
 
   const offerVariants = {
     kitchen: [
@@ -36,6 +43,11 @@
       }
     ]
   };
+
+  function getPageSlug() {
+    const pathname = window.location.pathname.replace(/^\/|\/$/g, '');
+    return pathname || 'home';
+  }
 
   function parseUtmParams() {
     const params = new URLSearchParams(window.location.search);
@@ -84,9 +96,106 @@
     }
   }
 
+  function resolvePath(source, path) {
+    if (!source || !path) return undefined;
+
+    return path.split('.').reduce((acc, key) => {
+      if (acc === undefined || acc === null) {
+        return undefined;
+      }
+      return acc[key];
+    }, source);
+  }
+
+  function applyDocumentMeta() {
+    if (cmsPage && cmsPage.meta && cmsPage.meta.title) {
+      document.title = cmsPage.meta.title;
+    }
+
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription && cmsPage && cmsPage.meta && cmsPage.meta.description) {
+      metaDescription.setAttribute('content', cmsPage.meta.description);
+    }
+  }
+
+  function renderListItem(item, type) {
+    if (type === 'kpis') {
+      return `<div class="kpi"><strong>${item.value || ''}</strong><span>${item.label || ''}</span></div>`;
+    }
+
+    if (type === 'cards') {
+      return `<article class="card"><h3>${item.title || ''}</h3><p>${item.description || ''}</p></article>`;
+    }
+
+    return `<li>${item}</li>`;
+  }
+
+  function applyCmsBindings() {
+    const scope = {
+      settings: cmsSettings,
+      page: cmsPage || {},
+    };
+
+    document.querySelectorAll('[data-cms-text]').forEach((el) => {
+      const value = resolvePath(scope, el.dataset.cmsText);
+      if (typeof value === 'string') {
+        el.textContent = value;
+      }
+    });
+
+    document.querySelectorAll('[data-cms-href]').forEach((el) => {
+      const value = resolvePath(scope, el.dataset.cmsHref);
+      if (typeof value === 'string' && el.matches('a')) {
+        el.setAttribute('href', value);
+      }
+    });
+
+    document.querySelectorAll('[data-cms-placeholder]').forEach((el) => {
+      const value = resolvePath(scope, el.dataset.cmsPlaceholder);
+      if (typeof value === 'string') {
+        el.setAttribute('placeholder', value);
+      }
+    });
+
+    document.querySelectorAll('[data-cms-value]').forEach((el) => {
+      const value = resolvePath(scope, el.dataset.cmsValue);
+      if (typeof value === 'string') {
+        el.value = value;
+      }
+    });
+
+    document.querySelectorAll('[data-cms-list]').forEach((el) => {
+      const items = resolvePath(scope, el.dataset.cmsList);
+      const listType = el.dataset.cmsListType || 'bullets';
+
+      if (!Array.isArray(items)) return;
+
+      el.innerHTML = items.map((item) => renderListItem(item, listType)).join('');
+    });
+  }
+
+  async function loadCmsBootstrap() {
+    const response = await fetch(`/api/cms/bootstrap?page=${encodeURIComponent(pageSlug)}`);
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data || !data.ok) {
+      return;
+    }
+
+    cmsSettings = {
+      ...cmsSettings,
+      ...(data.settings || {}),
+    };
+    cmsPage = data.page || null;
+
+    applyDocumentMeta();
+    applyCmsBindings();
+  }
+
   function getCurrentPhone(attribution) {
     const source = (attribution.utm_source || '').toLowerCase();
-    return phoneMapBySource[source] || '+7 (863) 200-00-00';
+    const sourceMap = cmsSettings.phonesBySource || {};
+    return sourceMap[source] || cmsSettings.defaultPhone || '+7 (863) 200-00-00';
   }
 
   function updateDynamicContacts(attribution) {
@@ -101,9 +210,11 @@
     });
 
     const wa = document.querySelectorAll('[data-whatsapp-link]');
-    const waPhone = '78632000000';
+    const waPhone = cmsSettings.whatsappPhone || '78632000000';
+    const waMessage = cmsSettings.whatsappMessage || 'Здравствуйте, хочу расчет по проекту';
+
     wa.forEach((el) => {
-      el.setAttribute('href', `https://wa.me/${waPhone}?text=${encodeURIComponent('Здравствуйте, хочу расчет по проекту')}`);
+      el.setAttribute('href', `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`);
     });
   }
 
@@ -148,6 +259,10 @@
     box.textContent = message;
   }
 
+  function getPageCityValue() {
+    return (cmsPage && cmsPage.form && cmsPage.form.cityValue) || 'Ростов-на-Дону';
+  }
+
   function bindShortForm() {
     const form = document.querySelector('[data-short-form]');
     if (!form || !funnelType) return;
@@ -161,7 +276,7 @@
         funnel_type: funnelType,
         name: String(formData.get('name') || ''),
         phone: String(formData.get('phone') || ''),
-        city: String(formData.get('city') || 'Ростов-на-Дону'),
+        city: String(formData.get('city') || getPageCityValue()),
         quiz_answers: {},
         landing_url: window.location.href,
         client_id: getClientId(),
@@ -292,7 +407,7 @@
         funnel_type: funnelType,
         name,
         phone,
-        city: 'Ростов-на-Дону',
+        city: getPageCityValue(),
         quiz_answers: answers,
         landing_url: window.location.href,
         client_id: getClientId(),
@@ -326,17 +441,19 @@
 
   function init() {
     const attribution = readAttribution();
-    updateDynamicContacts(attribution);
-    createOfferVariant();
-    bindShortForm();
-    bindQuiz();
-    bindCallAndWhatsappEvents();
 
-    const year = document.querySelector('[data-year]');
-    if (year) year.textContent = String(new Date().getFullYear());
+    loadCmsBootstrap()
+      .catch(function () {})
+      .finally(function () {
+        updateDynamicContacts(attribution);
+        createOfferVariant();
+        bindShortForm();
+        bindQuiz();
+        bindCallAndWhatsappEvents();
 
-    const pageLabel = document.querySelector('[data-page-label]');
-    if (pageLabel) pageLabel.textContent = pageTitle;
+        const year = document.querySelector('[data-year]');
+        if (year) year.textContent = String(new Date().getFullYear());
+      });
   }
 
   init();

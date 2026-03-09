@@ -61,12 +61,12 @@
   }
   </script>
 </head>
-<body data-funnel="wardrobe">
+<body data-funnel="wardrobe" data-page-slug="shkafy-rostov">
   <header class="site-header">
     <div class="container header-grid">
       <a class="brand" href="/">
         <span class="brand-badge"></span>
-        <span class="brand-text">Kitchen_V</span>
+        <span class="brand-text" data-cms-text="settings.brandName">Kitchen_V</span>
       </a>
       <nav class="nav">
         <a href="/kuhni-rostov">Кухни</a>
@@ -86,20 +86,20 @@
     <section class="hero">
       <div class="container hero-grid">
         <article class="hero-card">
-          <span class="hero-tag">Шкафы Ростов-на-Дону</span>
+          <span class="hero-tag" data-cms-text="page.hero.tag">Шкафы Ростов-на-Дону</span>
           <h1 data-offer-title>Шкафы-купе и гардеробные за 14-20 дней</h1>
           <p data-offer-subtitle>Точный замер, проект и монтаж под ключ с гарантией</p>
           <div class="hero-actions">
-            <button class="btn btn-primary" type="button" data-open-quiz>Рассчитать стоимость</button>
+            <button class="btn btn-primary" type="button" data-open-quiz data-cms-text="page.hero.primaryCtaLabel">Рассчитать стоимость</button>
             <a class="btn btn-secondary" href="tel:+78632000000" data-dynamic-phone>+7 (863) 200-00-00</a>
-            <a class="btn btn-ghost" href="#lead-form">Оставить номер</a>
+            <a class="btn btn-ghost" href="#lead-form" data-cms-text="page.hero.tertiaryCtaLabel">Оставить номер</a>
           </div>
         </article>
 
         <aside class="offer-card">
-          <h2>Что получаете</h2>
-          <p>Решение под ваши размеры, стилистику интерьера и бюджет.</p>
-          <ul class="bullets">
+          <h2 data-cms-text="page.offer.title">Что получаете</h2>
+          <p data-cms-text="page.offer.description">Решение под ваши размеры, стилистику интерьера и бюджет.</p>
+          <ul class="bullets" data-cms-list="page.offer.bullets" data-cms-list-type="bullets">
             <li>Проектируем под сложные ниши и углы</li>
             <li>Используем надежную фурнитуру</li>
             <li>Фиксированная смета и сроки в договоре</li>
@@ -111,9 +111,9 @@
 
     <section class="section">
       <div class="container">
-        <h2>Как проходит заказ</h2>
-        <p class="lead">Максимально прозрачно: от заявки до монтажа.</p>
-        <div class="cards">
+        <h2 data-cms-text="page.steps.title">Как проходит заказ</h2>
+        <p class="lead" data-cms-text="page.steps.lead">Максимально прозрачно: от заявки до монтажа.</p>
+        <div class="cards" data-cms-list="page.steps.items" data-cms-list-type="cards">
           <article class="card"><h3>1. Точный замер</h3><p>Фиксируем размеры и ограничения помещения, обсуждаем задачи хранения.</p></article>
           <article class="card"><h3>2. Проект</h3><p>Выбираем конфигурацию, материалы, цвет, наполнения и финальную смету.</p></article>
           <article class="card"><h3>3. Монтаж</h3><p>Производим, доставляем и устанавливаем в согласованный день.</p></article>
@@ -123,16 +123,16 @@
 
     <section class="section" id="lead-form">
       <div class="container form-card">
-        <h2>Оставьте номер для расчета шкафа/гардеробной</h2>
-        <p class="lead">Менеджер свяжется и уточнит детали для точного просчета.</p>
+        <h2 data-cms-text="page.form.title">Оставьте номер для расчета шкафа/гардеробной</h2>
+        <p class="lead" data-cms-text="page.form.lead">Менеджер свяжется и уточнит детали для точного просчета.</p>
         <form data-short-form>
           <div class="form-row">
             <input class="input" name="name" placeholder="Ваше имя" required minlength="2" />
             <input class="input" name="phone" placeholder="Телефон" required />
           </div>
           <div class="form-row" style="margin-top: 10px;">
-            <input class="input" name="city" value="Ростов-на-Дону" />
-            <button class="btn btn-primary" type="submit">Получить расчет</button>
+            <input class="input" name="city" value="Ростов-на-Дону" data-cms-value="page.form.cityValue" />
+            <button class="btn btn-primary" type="submit" data-cms-text="page.form.submitLabel">Получить расчет</button>
           </div>
           <p class="form-note">Нажимая кнопку, вы соглашаетесь с <a href="/privacy">политикой конфиденциальности</a>.</p>
           <div class="notice" data-notice></div>
@@ -142,8 +142,8 @@
 
     <section class="section">
       <div class="container">
-        <h2>KPI воронки на запуск</h2>
-        <div class="kpi-strip">
+        <h2 data-cms-text="page.kpis.title">KPI воронки на запуск</h2>
+        <div class="kpi-strip" data-cms-list="page.kpis.items" data-cms-list-type="kpis">
           <div class="kpi"><strong>5-9%</strong><span>Конверсия в лид</span></div>
           <div class="kpi"><strong>85%+</strong><span>Доля дозвона</span></div>
           <div class="kpi"><strong>60%+</strong><span>Квалификация лидов</span></div>
@@ -172,8 +172,8 @@
   <div class="modal" data-quiz-modal>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Квиз расчета шкафа">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
-        <h2 style="margin:0;">Квиз: расчет шкафа за 1 минуту</h2>
-        <button class="btn btn-secondary" type="button" data-close-quiz>Закрыть</button>
+        <h2 style="margin:0;" data-cms-text="page.quiz.title">Квиз: расчет шкафа за 1 минуту</h2>
+        <button class="btn btn-secondary" type="button" data-close-quiz data-cms-text="page.quiz.closeLabel">Закрыть</button>
       </div>
 
       <div class="step active" data-required-key="type">
@@ -232,8 +232,8 @@
       </div>
 
       <div class="step">
-        <h3>Куда отправить расчет?</h3>
-        <p>Оставьте контакт, и мы отправим ориентир по стоимости.</p>
+        <h3 data-cms-text="page.quiz.submitTitle">Куда отправить расчет?</h3>
+        <p data-cms-text="page.quiz.submitLead">Оставьте контакт, и мы отправим ориентир по стоимости.</p>
         <div class="form-row">
           <input class="input" name="quiz_name" placeholder="Ваше имя" />
           <input class="input" name="quiz_phone" placeholder="Телефон" />
