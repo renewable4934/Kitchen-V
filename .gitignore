@@ -1,0 +1,53 @@
+# -----------------------------
+# Node.js / JavaScript
+# -----------------------------
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build artifacts
+dist/
+build/
+.next/
+coverage/
+
+# -----------------------------
+# Environment files (secrets)
+# -----------------------------
+.env
+.env.*
+!.env.example
+!**/.env.example
+promotion/site/.env
+
+# -----------------------------
+# Runtime local data
+# -----------------------------
+**/*.ndjson
+promotion/site/data/
+
+# -----------------------------
+# Python / local tooling
+# -----------------------------
+.venv/
+__pycache__/
+*.pyc
+
+# -----------------------------
+# OS / editor files
+# -----------------------------
+.DS_Store
+.vscode/
+.idea/
+
+# -----------------------------
+# Existing project-specific files
+# -----------------------------
+kitchen_obsidian/registry/launchd-stdout.log
+kitchen_obsidian/registry/launchd-stderr.log
+kitchen_obsidian/registry/sync-log-*.jsonl
+kitchen_obsidian/registry/sync-lock
+kitchen_obsidian/vault/.obsidian/

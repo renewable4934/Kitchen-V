@@ -1,0 +1,2 @@
+date,task_block,tool,prompt_summary,input_data,output_artifact,manual_checks_done,accepted,notes
+,,ChatGPT/Claude/Perplexity/Midjourney,,,,fact_check+legal_check,,

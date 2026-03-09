@@ -1,0 +1,20 @@
+# Title: Anytype Sync Config
+# Purpose: Конфигурация двусторонней синхронизации kitchen_anytype <-> Anytype API.
+# Owner: You
+# Last updated: 2026-03-05
+
+anytype_api_base: ""
+anytype_api_key_env: "ANYTYPE_API_KEY"
+workspace_or_space_id: ""
+poll_interval_minutes: 15
+archive_on_remote_delete: true
+tie_breaker: "remote"
+
+# Endpoints are configurable because Anytype API versions can differ.
+# Set anytype_api_base and endpoints from your current Anytype API docs.
+changes_endpoint: "/v1/objects/changes"
+objects_endpoint: "/v1/objects"
+archive_endpoint_template: "/v1/objects/{object_id}/archive"
+request_timeout_seconds: 30
+
+default_owner: "you"

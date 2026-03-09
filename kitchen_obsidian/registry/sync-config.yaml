@@ -1,0 +1,11 @@
+# Title: Obsidian Sync Config
+# Purpose: Настройка двустороннего файлового sync между vault и local-zone.
+# Owner: You
+# Last updated: 2026-03-05
+
+vault_root: "kitchen_obsidian/vault"
+local_zone_root: "kitchen_obsidian/local-zone"
+poll_interval_seconds: 900
+tie_breaker: "newer_timestamp"
+archive_on_delete: true
+excluded_paths: [".obsidian/", "registry/"]

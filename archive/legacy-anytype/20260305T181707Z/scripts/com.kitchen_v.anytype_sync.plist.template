@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Title: Anytype Sync Launchd Template -->
+<!-- Purpose: Run bidirectional kitchen_anytype sync every 900 seconds -->
+<!-- Owner: You -->
+<!-- Last updated: 2026-03-05 -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kitchen_v.anytype_sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON_BIN__</string>
+    <string>__REPO_ROOT__/scripts/anytype_sync.py</string>
+    <string>--mode</string>
+    <string>bidirectional</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__REPO_ROOT__</string>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__REPO_ROOT__/kitchen_anytype/registry/launchd-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>__REPO_ROOT__/kitchen_anytype/registry/launchd-stderr.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>ANYTYPE_API_KEY</key>
+    <string>__ANYTYPE_API_KEY__</string>
+  </dict>
+</dict>
+</plist>

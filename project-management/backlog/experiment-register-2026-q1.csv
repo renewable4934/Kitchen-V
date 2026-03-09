@@ -1,0 +1,2 @@
+experiment_id,start_date,end_date,funnel,hypothesis,variant_a,variant_b,success_metric,status,decision,owner,notes
+EXP-2026-03-01,,,kitchen/wardrobe,,,,"CR, CPL, qualification",,,,

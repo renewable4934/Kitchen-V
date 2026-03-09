@@ -1,0 +1,10 @@
+{
+  "title": "Anytype Sync State",
+  "purpose": "Stores cursor and last run status for bidirectional sync.",
+  "owner": "sync-script",
+  "last_updated": "2026-03-05T00:00:00+00:00",
+  "last_cursor": null,
+  "last_run_mode": "",
+  "last_run_at": "",
+  "last_run_result": ""
+}

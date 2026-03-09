@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Title: Obsidian Sync Launchd Template -->
+<!-- Purpose: Run bidirectional kitchen_obsidian sync every 900 seconds -->
+<!-- Owner: You -->
+<!-- Last updated: 2026-03-05 -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kitchen_v.obsidian_sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON_BIN__</string>
+    <string>__REPO_ROOT__/scripts/obsidian_sync.py</string>
+    <string>--mode</string>
+    <string>bidirectional</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__REPO_ROOT__</string>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__REPO_ROOT__/kitchen_obsidian/registry/launchd-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>__REPO_ROOT__/kitchen_obsidian/registry/launchd-stderr.log</string>
+</dict>
+</plist>

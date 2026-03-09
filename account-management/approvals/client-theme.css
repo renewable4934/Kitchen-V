@@ -1,0 +1,136 @@
+/* @theme client-theme */
+
+@import 'default';
+
+:root {
+  --bg-main: #f7f3eb;
+  --bg-soft: #efe8dc;
+  --ink: #1f2933;
+  --muted: #5b6672;
+  --accent: #b7702d;
+  --accent-soft: #e8c8a7;
+  --card: #fffdfa;
+  --line: #d8c8b3;
+}
+
+section {
+  font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  background: radial-gradient(circle at top right, #fdf5ea 0%, var(--bg-main) 42%, var(--bg-soft) 100%);
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1.25;
+  padding: 56px 70px;
+}
+
+h1, h2, h3 {
+  color: #273444;
+  letter-spacing: 0.2px;
+}
+
+h1 {
+  font-size: 1.65em;
+  margin-bottom: 0.25em;
+}
+
+h2 {
+  font-size: 1.2em;
+  margin-bottom: 0.35em;
+}
+
+h3 {
+  font-size: 0.95em;
+  color: var(--accent);
+  margin-top: 0.4em;
+}
+
+p, li {
+  color: var(--ink);
+}
+
+small, .muted {
+  color: var(--muted);
+}
+
+ul, ol {
+  margin-top: 0.25em;
+}
+
+li {
+  margin-bottom: 0.18em;
+}
+
+strong {
+  color: #1e3850;
+}
+
+code {
+  background: #f2e7d8;
+  color: #6c3f1b;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.kpi .card h3 {
+  margin: 0 0 0.25em 0;
+  color: #8e541f;
+}
+
+.kpi .card p {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.56em;
+  background: rgba(255, 253, 250, 0.9);
+}
+
+th, td {
+  border: 1px solid var(--line);
+  padding: 7px 8px;
+  vertical-align: top;
+}
+
+th {
+  background: #f0dfcb;
+  color: #3a2b1a;
+  font-weight: 700;
+}
+
+.highlight {
+  color: #8e541f;
+  font-weight: 700;
+}
+
+.footer {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  bottom: 30px;
+  color: var(--muted);
+  font-size: 0.52em;
+  border-top: 1px solid #cfbfa8;
+  padding-top: 8px;
+}
