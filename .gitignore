@@ -13,6 +13,7 @@ dist/
 build/
 .next/
 coverage/
+*.tsbuildinfo
 
 # -----------------------------
 # Environment files (secrets)

@@ -1,17 +1,17 @@
 # Title: Kitchen_V Project Index
 **Purpose:** Человеческая карта проекта: где лежат материалы, зачем они нужны и что делать дальше.  
 **Owner:** Вы (основной пользователь), команда проекта (исполнители).  
-**Last updated:** 2026-03-05
+**Last updated:** 2026-03-10
 
 ## Project status
 1. Структура проекта приведена к единым сущностям: promotion, analytics, sales, crm, account-management, project-management, archive.
-2. Сайт и технические материалы перенесены в `promotion/site/`.
+2. Сайт в `promotion/site/` переведен на Next.js и использует Supabase как CMS и хранилище лидов/событий.
 3. Исследования рынка перенесены в `analytics/` по смысловым папкам.
 4. CRM-документы и сырые лиды/события перенесены в `crm/architecture/`.
 5. Ежедневные карточки перенесены в `project-management/daily-plan-fact/` с единым именованием `plan-fact-YYYY-MM-DD.md`.
 6. Клиентские презентации и материалы согласования перенесены в `account-management/approvals/`.
 7. Старые/временные контейнеры и шаблоны убраны в `archive/`.
-8. Ближайший фокус: поддерживать актуальность `plan-fact` и раз в неделю проводить гигиену архива.
+8. Ближайший фокус: довести управляемость сайта через Supabase, затем подключать Bitrix, Яндекс Директ и VK Ads.
 9. Добавлена human zone `kitchen_obsidian/` для двусторонней синхронизации категорий с Obsidian (без удаления данных).
 10. Автосинхронизация включена через `launchd` каждые 15 минут для `kitchen_obsidian/vault/` и `kitchen_obsidian/local-zone/`.
 11. Старый Anytype-контур выведен из active-зоны и перенесен в `archive/legacy-anytype/`.
@@ -81,12 +81,45 @@
 
 ### Entry
 - **Path:** `promotion/site/`
-- **Purpose (RU):** Основной код сайта, backend/API, документация по интеграциям и web-артефакты.
+- **Purpose (RU):** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.
 - **Trigger:** Перенос всех материалов сайта в единую папку сайта.
 - **Owner:** Вы / команда.
-- **Last updated:** 2026-03-05
+- **Last updated:** 2026-03-10
 - **Lifecycle:** Active
-- **Next step:** Вести изменения сайта только внутри этой папки.
+- **Next step:** Наполнять CMS в Supabase и готовить подключение CRM/рекламных систем.
+
+### Entry
+- **Path:** `promotion/site/README.md`
+- **Purpose (RU):** Пошаговая инструкция по запуску сайта, подключению Supabase и проверке API.
+- **Trigger:** Переход сайта с Express на Next.js и появление CMS-слоя.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-10
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/supabase/schema.sql`
+- **Purpose (RU):** SQL-схема таблиц Supabase для CMS сайта, лидов и аналитических событий.
+- **Trigger:** Потребность управлять лендингом через Supabase и хранить заявки централизованно.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-10
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/supabase/cms_seed.sql`
+- **Purpose (RU):** Стартовое наполнение Supabase точным контентом и ссылками на изображения из текущего лендинга.
+- **Trigger:** Нужно быстро развернуть CMS без ручного набора каждой секции.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-10
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/legacy/express/`
+- **Purpose (RU):** Старая Express-версия сайта, оставленная как история и точка сравнения при миграции.
+- **Trigger:** Переход на Next.js без потери прежней логики и файлов.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-10
+- **Lifecycle:** Active
+- **Next step:** Не развивать дальше, использовать только как reference до финальной чистки.
 
 ### Entry
 - **Path:** `promotion/yandex-direct/ads-checklist.md`

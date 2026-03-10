@@ -1,165 +1,96 @@
-# Kitchen_V — понятный старт для первого запуска
-
-Этот репозиторий содержит рабочий сайт в папке `promotion/site` и дополнительные бизнес-материалы.
+# Title: Kitchen_V repository
+**Purpose:** Главный репозиторий проекта: сайт, документы по маркетингу, CRM и управлению проектом.  
+**Owner:** Вы.  
+**Last updated:** 2026-03-10
 
 ## Что здесь главное
 
-Основной запускаемый проект:
+Если смотреть только на запуск сайта, главный путь такой:
 
-- `promotion/site` — Node.js + Express сайт (лендинги + API для лидов и событий).
+- `promotion/site`
 
-Дополнительно:
+Именно там теперь лежит:
 
-- `promotion/site/web/unpacked_v0` — архивный экспорт из v0 (отдельный Next.js проект, сейчас не основной).
-- Остальные папки в корне (`analytics`, `sales`, `crm` и т.д.) — документы и операционные материалы.
+- сайт на `Next.js`
+- CMS-слой на hosted `Supabase`
+- API лидов и событий
 
-## Как сейчас устроен проект
+## Как сейчас устроен сайт
 
-- `promotion/site/web/unpacked_v0` — это макет из v0, который удобно использовать как визуальный референс.
-- `promotion/site` — это реальный кодовый проект, который можно развивать аккуратно и подключать к внешним сервисам.
-- Supabase подключается к `promotion/site` как hosted backend для хранения лидов и событий.
+- `promotion/site/web/unpacked_v0` — эталонный макет из `v0`
+- `promotion/site` — боевая управляемая копия этого макета
+- `promotion/site/legacy/express` — старая Express-реализация, оставленная как legacy
 
-Это значит: v0 сейчас лучше считать не "боевым приложением", а источником дизайна и контента, а рабочую управляемую копию разумно собирать в основном проекте.
+Практически это значит:
 
-## Минимальные требования
+- дизайн и структура взяты из `v0`
+- тексты, навигация, секции и картинки теперь могут идти из `Supabase`
+- лиды и события тоже сохраняются в `Supabase`
 
-- Node.js `18+`
-- npm
-
-Проверить версии:
-
-```bash
-node -v
-npm -v
-```
-
-## Быстрый запуск локально (3 шага)
+## Быстрый локальный запуск сайта
 
 ```bash
-cd promotion/site
+cd /Users/maximisaev/repos/Kitchen_V/promotion/site
 npm install
 cp .env.example .env
 npm run dev
 ```
 
-Сайт откроется на:
+Открыть:
 
-- `http://localhost:3000`
+- `http://localhost:3000/`
 
-Полезные URL:
+Проверка API:
 
-- `http://localhost:3000/kuhni-rostov`
-- `http://localhost:3000/shkafy-rostov`
-- `http://localhost:3000/health`
+- `http://localhost:3000/api/health`
+- `http://localhost:3000/api/cms/bootstrap`
 
-## Переменные окружения (`.env`)
+## Что нужно заполнить в `.env`
 
-Шаблон уже есть в:
+Файл-шаблон:
 
 - `promotion/site/.env.example`
 
-Что важно:
+Минимум для CMS:
 
-- Не храните реальные ключи и вебхуки в Git.
-- Для Supabase заполните:
-  - `SUPABASE_URL`
-  - `SUPABASE_ANON_KEY`
-- Для CRM заполните **одну** из переменных:
-  - `CRM_WEBHOOK_URL`
-  - `BITRIX24_WEBHOOK_URL`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
 
-Если Supabase пока не настроен, сайт продолжит работать и будет складывать лиды/события локально в `promotion/site/data/*.ndjson`.
+Опционально для будущего CRM:
 
-## Supabase: что именно было добавлено
+- `CRM_WEBHOOK_URL`
+- `BITRIX24_WEBHOOK_URL`
 
-- Пакет `@supabase/supabase-js` в `promotion/site`.
-- Переиспользуемый серверный клиент Supabase.
-- Поддержка env-переменных `SUPABASE_URL` и `SUPABASE_ANON_KEY`.
-- Мягкая интеграция в API:
-  - `POST /api/lead` сохраняет лид локально и пытается записать его в Supabase.
-  - `POST /api/event` сохраняет событие локально и пытается записать его в Supabase.
-- SQL-шаблон для создания таблиц:
-  - `promotion/site/supabase/schema.sql`
+## Как подключить Supabase
 
-## Как подключить hosted Supabase пошагово
-
-1. Создайте проект в Supabase.
-2. Откройте `Project Settings -> API`.
-3. Возьмите:
-   - `Project URL`
-   - `anon public key`
-4. Откройте файл `promotion/site/.env`.
-5. Добавьте:
-
-```bash
-SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_ANON_KEY=your-public-anon-key
-```
-
-6. В Supabase откройте `SQL Editor`.
-7. Выполните SQL из файла:
+1. Создать hosted-проект в Supabase
+2. Взять `Project URL` и `anon public key`
+3. Вставить их в `promotion/site/.env`
+4. Выполнить в `Supabase SQL Editor`:
    - `promotion/site/supabase/schema.sql`
-8. Затем выполните SQL из файла:
    - `promotion/site/supabase/cms_seed.sql`
-9. Перезапустите сайт:
+5. Перезапустить локальный сайт
+
+Если всё подключено правильно:
+
+- `/api/health` покажет `supabase_enabled: true`
+- `/api/cms/bootstrap` покажет, что контент читается из CMS
+
+## Команды сайта
 
 ```bash
-cd promotion/site
+cd /Users/maximisaev/repos/Kitchen_V/promotion/site
 npm run dev
+npm run build
+npm run typecheck
 ```
 
-10. Проверьте:
-   - `http://localhost:3000/health`
-   - `http://localhost:3000/api/cms/bootstrap?page=kuhni-rostov`
+## GitHub
 
-Если все подключено правильно, там будет `supabase_enabled: true`.
-Если в SQL Editor вы видите в конце `false`, это еще не значит, что запрос сломан. Для `drop policy if exists` и похожих команд такое бывает. Признак успеха: нет красной ошибки, а таблицы и строки появились в `Table Editor`.
+Работа с GitHub уже настроена через SSH на этом Mac.
 
-## Команды проекта
+Это значит:
 
-Запуск разработки:
-
-```bash
-cd promotion/site
-npm run dev
-```
-
-Прод-запуск (локально):
-
-```bash
-cd promotion/site
-npm start
-```
-
-Тесты:
-
-```bash
-cd promotion/site
-npm test
-```
-
-## Подготовка к GitHub (пошагово)
-
-Если у вас уже есть пустой репозиторий на GitHub:
-
-```bash
-cd /Users/maximisaev/repos/Kitchen_V
-git init
-git add .
-git commit -m "Initial clean project setup"
-git branch -M main
-git remote add origin https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
-git push -u origin main
-```
-
-Если репозиторий уже инициализирован, пропустите `git init`.
-
-## Что уже сделано для безопасного коммита
-
-- Обновлен `.gitignore` для Node.js, env-файлов, локальных данных и артефактов сборки.
-- Секреты не добавлены.
-- `.env.example` содержит только шаблонные значения.
-
-## Важное предположение
-
-Этот README предполагает, что для запуска и деплоя вы используете именно `promotion/site` как основной продуктовый сайт.
+- я могу делать `commit` и `push`
+- вам не нужно каждый раз вводить пароль
+- если понадобится новая ветка, я создам её и объясню, что произошло

@@ -1,19 +1,45 @@
-# Kitchen_V Site (promotion/site)
+# Title: promotion/site
+**Purpose:** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.  
+**Owner:** Вы / команда проекта.  
+**Last updated:** 2026-03-10
 
-Это основной веб-проект: Express-сервер + статические страницы + API для лидов и аналитики.
+## Что это теперь такое
 
-## Что делает проект
+`promotion/site` — это новый основной сайт на `Next.js App Router`.
 
-- Отдает страницы лендингов (`/kuhni-rostov`, `/shkafy-rostov` и др.)
-- Принимает лиды: `POST /api/lead`
-- Принимает аналитические события: `POST /api/event`
-- Отдает health-check: `GET /health`
-- Может сохранять лиды и события в hosted Supabase без отдельной админки
-- Может читать контент страниц и общие настройки из Supabase как из простой CMS
+Что внутри:
 
-## Быстрый запуск
+- точная визуальная копия лендинга из `v0`
+- CMS-слой на hosted `Supabase`
+- API:
+  - `POST /api/lead`
+  - `POST /api/event`
+  - `GET /api/health`
+- старая Express-версия сохранена в:
+  - `promotion/site/legacy/express`
+
+Это значит:
+
+- `web/unpacked_v0` — эталонный макет
+- `promotion/site` — боевая управляемая версия
+- `legacy/express` — старая реализация, оставленная для истории и сравнения
+
+## Что нужно для запуска
+
+- Node.js `20.9+`
+- npm
+
+Проверка:
 
 ```bash
+node -v
+npm -v
+```
+
+## Быстрый запуск локально
+
+```bash
+cd /Users/maximisaev/repos/Kitchen_V/promotion/site
 npm install
 cp .env.example .env
 npm run dev
@@ -21,63 +47,100 @@ npm run dev
 
 Открыть:
 
-- `http://localhost:3000`
+- `http://localhost:3000/`
 
-## Переменные окружения
+Полезные URL:
 
-Шаблон:
+- `http://localhost:3000/api/health`
+- `http://localhost:3000/api/cms/bootstrap`
 
-- `.env.example`
+Старые URL теперь должны уводить на `/`:
 
-Ключевые поля:
+- `/kuhni-rostov`
+- `/shkafy-rostov`
+- `/portfolio`
+- `/reviews`
+- `/about`
+- `/contacts`
+- `/privacy`
 
-- `PORT`
-- `NODE_ENV`
-- `SUPABASE_URL` (опционально, но нужен для Supabase)
-- `SUPABASE_ANON_KEY` (опционально, но нужен для Supabase)
-- `DEFAULT_CITY`
-- `CONTACT_PHONE`
-- `WHATSAPP_PHONE`
-- `CRM_WEBHOOK_URL` (опционально)
-- `BITRIX24_WEBHOOK_URL` (опционально)
+## Как подключить Supabase CMS
 
-Если Supabase не настроен, сайт все равно работает, а лиды/события сохраняются локально в `data/*.ndjson`.
+### Шаг 1. Вставить ключи в `.env`
 
-## Как подключить hosted Supabase
+Откройте:
 
-1. Создайте проект в Supabase Cloud.
-2. Откройте `Project Settings -> API`.
-3. Скопируйте:
-   - `Project URL` -> в `SUPABASE_URL`
-   - `anon public key` -> в `SUPABASE_ANON_KEY`
-4. Откройте SQL Editor в Supabase.
-5. Выполните SQL из файла:
-   - `supabase/schema.sql`
-6. Затем выполните SQL из файла:
-   - `supabase/cms_seed.sql`
-7. После этого перезапустите локальный сервер:
+- `promotion/site/.env`
+
+Добавьте:
 
 ```bash
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-public-anon-key
+```
+
+### Шаг 2. Выполнить SQL в Supabase
+
+Сначала:
+
+- `promotion/site/supabase/schema.sql`
+
+Потом:
+
+- `promotion/site/supabase/cms_seed.sql`
+
+Выполнять нужно по очереди в `Supabase -> SQL Editor -> New query -> Run`.
+
+### Шаг 3. Перезапустить локальный сайт
+
+```bash
+cd /Users/maximisaev/repos/Kitchen_V/promotion/site
 npm run dev
 ```
 
-Проверка:
+### Шаг 4. Проверить, что CMS подключилась
 
-- `GET /health` покажет `supabase_enabled: true`, если переменные окружения заданы.
-- `GET /api/cms/bootstrap?page=kuhni-rostov` вернет CMS-контент для страницы.
+Откройте:
 
-Если в SQL Editor в конце показывается `false`, это не всегда ошибка. Важнее, чтобы не было красного сообщения об ошибке и чтобы таблицы появились в `Table Editor`.
+- `http://localhost:3000/api/health`
+- `http://localhost:3000/api/cms/bootstrap`
+
+Если всё хорошо:
+
+- `supabase_enabled: true`
+- в bootstrap будет `source: "supabase"` или частично `diagnostics.* = "supabase"`
+
+## Как сайт использует Supabase
+
+Схема простая:
+
+1. `cms_sites` хранит общие настройки сайта
+2. `cms_pages` хранит meta страницы
+3. `cms_sections` хранит содержимое секций лендинга
+4. `cms_navigation` хранит пункты меню
+5. `cms_assets` хранит URL картинок и alt-тексты
+6. `leads` хранит заявки
+7. `events` хранит события аналитики
+
+Это позволяет:
+
+- менять тексты без правки кода
+- менять ссылки и CTA через CMS
+- менять изображения через `cms_assets`
+- собирать лиды и события в одной базе
 
 ## Команды
 
 ```bash
-npm run dev    # запуск в режиме разработки
-npm start      # обычный запуск
-npm test       # API тесты
+npm run dev
+npm run build
+npm run start
+npm run typecheck
 ```
 
-## Важно перед публикацией
+## Что уже проверено
 
-- Не коммитьте `.env` и реальные ключи.
-- Проверьте webhook CRM (если хотите отправку лидов в CRM).
-- Убедитесь, что тесты проходят.
+- `npm run typecheck`
+- `npm run build`
+
+Обе команды должны проходить локально на текущем состоянии проекта.
