@@ -197,6 +197,15 @@
 - **Last updated:** 2026-03-05
 - **Lifecycle:** Active
 
+### Entry
+- **Path:** `crm/access/`
+- **Purpose (RU):** Папка для инструкций по доступам. Сам пароль Supabase Postgres хранится не в Git, а в macOS Keychain.
+- **Trigger:** Нужен безопасный способ хранить доступ к базе и чтобы его можно было найти позже без публикации секрета.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-10
+- **Lifecycle:** Active
+- **Next step:** Для поиска пароля использовать Keychain запись `Kitchen_V Supabase Postgres` с account `postgres`.
+
 ## account-management
 Зачем сущность: работа с клиентом, согласования и материалы по договору.
 

@@ -94,3 +94,18 @@ npm run typecheck
 - я могу делать `commit` и `push`
 - вам не нужно каждый раз вводить пароль
 - если понадобится новая ветка, я создам её и объясню, что произошло
+
+## Где лежат чувствительные доступы
+
+Секреты не хранятся в Git.
+
+Текущий пароль Supabase Postgres сохранён в `macOS Keychain`:
+
+- service: `Kitchen_V Supabase Postgres`
+- account: `postgres`
+
+Найти его на этом Mac можно через `Keychain Access` или командой:
+
+```bash
+security find-generic-password -s "Kitchen_V Supabase Postgres" -a "postgres" -g
+```

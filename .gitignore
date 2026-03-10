@@ -29,6 +29,7 @@ promotion/site/.env
 # -----------------------------
 **/*.ndjson
 promotion/site/data/
+promotion/site/supabase/.temp/
 
 # -----------------------------
 # Python / local tooling

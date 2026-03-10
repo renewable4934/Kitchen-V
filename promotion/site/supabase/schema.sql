@@ -89,6 +89,7 @@ alter table public.cms_pages add column if not exists site_id text not null defa
 alter table public.cms_pages add column if not exists meta jsonb not null default '{}'::jsonb;
 alter table public.cms_pages add column if not exists published boolean not null default true;
 alter table public.cms_pages add column if not exists updated_at timestamptz not null default timezone('utc', now());
+alter table public.cms_pages add column if not exists content jsonb not null default '{}'::jsonb;
 
 create table if not exists public.cms_sections (
   id bigint generated always as identity primary key,
