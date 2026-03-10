@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",
+    "dotenv": "^17.3.1",
     "express": "^4.21.2",
     "helmet": "^8.1.0"
   },
