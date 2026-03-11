@@ -1,19 +1,22 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 
-import type { ConfiguratorContent } from "@/lib/site-content"
+import type { CmsAsset, ConfiguratorContent } from "@/lib/site-content"
 import { getTrackingContext, trackSiteEvent } from "@/lib/tracking"
 
 type ConfiguratorSectionProps = {
   content: ConfiguratorContent
+  assets: Record<string, CmsAsset>
   offerVariant: string | null
   experimentKey: string | null
 }
 
 export function ConfiguratorSection({
   content,
+  assets,
   offerVariant,
   experimentKey,
 }: ConfiguratorSectionProps) {
@@ -39,8 +42,32 @@ export function ConfiguratorSection({
     setSelections((prev) => ({ ...prev, [stepId]: value }))
   }
 
+  const handleInput = (stepId: string, value: string) => {
+    setSelections((prev) => ({ ...prev, [stepId]: value }))
+  }
+
   const toggleDiscount = (value: string) => {
     setSelectedDiscounts((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]))
+  }
+
+  const getDiscountSummary = () => {
+    return selectedDiscounts.reduce(
+      (summary, selectedValue) => {
+        const option = content.discountOptions.find((item) => item.value === selectedValue)
+        if (!option) {
+          return summary
+        }
+
+        if (option.discountType === "percent") {
+          summary.percent += option.discountValue
+        } else {
+          summary.fixed += option.discountValue
+        }
+
+        return summary
+      },
+      { percent: 0, fixed: 0 },
+    )
   }
 
   const canProceed = () => {
@@ -50,7 +77,11 @@ export function ConfiguratorSection({
     if (isDiscountStep) {
       return true
     }
-    return Boolean(selections[content.steps[currentStep]?.id])
+    const current = content.steps[currentStep]
+    if (current?.inputType === "number") {
+      return Boolean(selections[current.id]?.trim())
+    }
+    return Boolean(selections[current?.id])
   }
 
   const handleNext = () => {
@@ -71,6 +102,7 @@ export function ConfiguratorSection({
     setSubmitting(true)
 
     const trackingContext = getTrackingContext()
+    const discountSummary = getDiscountSummary()
     const payload = {
       funnel_type: "kitchen",
       name: contactInfo.name,
@@ -81,6 +113,7 @@ export function ConfiguratorSection({
       quiz_answers: {
         selections,
         discounts: selectedDiscounts,
+        discount_summary: discountSummary,
       },
       offer_variant: offerVariant,
       experiment_key: experimentKey,
@@ -135,8 +168,7 @@ export function ConfiguratorSection({
     <section className="bg-card py-24" id="configurator">
       <div className="mx-auto max-w-3xl px-6">
         <div className="mb-12 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">{content.eyebrow}</p>
-          <h2 className="mt-3 font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
+          <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             {content.title}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">{content.description}</p>
@@ -160,27 +192,56 @@ export function ConfiguratorSection({
             <div>
               <h3 className="font-serif text-2xl font-bold text-foreground">{content.steps[currentStep].title}</h3>
               <p className="mt-1 text-muted-foreground">{content.steps[currentStep].description}</p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {content.steps[currentStep].options.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => handleSelect(content.steps[currentStep].id, option.value)}
-                    className={`rounded-lg border p-4 text-left transition-all ${
-                      selections[content.steps[currentStep].id] === option.value
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "border-border hover:border-primary/30"
-                    }`}
-                  >
-                    <span
-                      className={`text-base font-medium ${
-                        selections[content.steps[currentStep].id] === option.value ? "text-primary" : "text-foreground"
-                      }`}
-                    >
-                      {option.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {content.steps[currentStep].inputType === "number" ? (
+                <div className="mt-6">
+                  <label htmlFor={content.steps[currentStep].id} className="mb-1 block text-sm font-medium text-foreground">
+                    Длина кухни, пог. м
+                  </label>
+                  <input
+                    id={content.steps[currentStep].id}
+                    type="number"
+                    min={content.steps[currentStep].min}
+                    step={content.steps[currentStep].step}
+                    value={selections[content.steps[currentStep].id] || ""}
+                    onChange={(event) => handleInput(content.steps[currentStep].id, event.target.value)}
+                    placeholder={content.steps[currentStep].placeholder}
+                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              ) : (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {content.steps[currentStep].options.map((option) => {
+                    const image = option.imageKey ? assets[option.imageKey] : null
+                    const selected = selections[content.steps[currentStep].id] === option.value
+
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => handleSelect(content.steps[currentStep].id, option.value)}
+                        className={`overflow-hidden rounded-lg border text-left transition-all ${
+                          selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {image ? (
+                          <div className="relative aspect-[4/3]">
+                            <Image
+                              src={image.publicUrl}
+                              alt={option.imageAlt || image.alt || option.label}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : null}
+                        <div className="p-4">
+                          <span className={`text-base font-medium ${selected ? "text-primary" : "text-foreground"}`}>
+                            {option.label}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -207,7 +268,7 @@ export function ConfiguratorSection({
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {`-${option.discount}`}
+                      {option.discountLabel}
                     </span>
                   </button>
                 ))}

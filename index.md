@@ -1,7 +1,7 @@
 # Title: Kitchen_V Project Index
 **Purpose:** Человеческая карта проекта: где лежат материалы, зачем они нужны и что делать дальше.  
 **Owner:** Вы (основной пользователь), команда проекта (исполнители).  
-**Last updated:** 2026-03-10
+**Last updated:** 2026-03-11
 
 ## Project status
 1. Структура проекта приведена к единым сущностям: promotion, analytics, sales, crm, account-management, project-management, archive.
@@ -11,7 +11,7 @@
 5. Ежедневные карточки перенесены в `project-management/daily-plan-fact/` с единым именованием `plan-fact-YYYY-MM-DD.md`.
 6. Клиентские презентации и материалы согласования перенесены в `account-management/approvals/`.
 7. Старые/временные контейнеры и шаблоны убраны в `archive/`.
-8. Ближайший фокус: довести управляемость сайта через Supabase, затем подключать Bitrix, Яндекс Директ и VK Ads.
+8. Ближайший фокус: довести точечные правки лендинга через Supabase CMS, затем подключать Bitrix, Яндекс Директ и VK Ads.
 9. Добавлена human zone `kitchen_obsidian/` для двусторонней синхронизации категорий с Obsidian (без удаления данных).
 10. Автосинхронизация включена через `launchd` каждые 15 минут для `kitchen_obsidian/vault/` и `kitchen_obsidian/local-zone/`.
 11. Старый Anytype-контур выведен из active-зоны и перенесен в `archive/legacy-anytype/`.
@@ -84,9 +84,9 @@
 - **Purpose (RU):** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.
 - **Trigger:** Перенос всех материалов сайта в единую папку сайта.
 - **Owner:** Вы / команда.
-- **Last updated:** 2026-03-10
+- **Last updated:** 2026-03-11
 - **Lifecycle:** Active
-- **Next step:** Наполнять CMS в Supabase и готовить подключение CRM/рекламных систем.
+- **Next step:** Держать точное совпадение сайта и CMS-контента, затем готовить подключение CRM/рекламных систем.
 
 ### Entry
 - **Path:** `promotion/site/README.md`
@@ -109,7 +109,31 @@
 - **Purpose (RU):** Стартовое наполнение Supabase точным контентом и ссылками на изображения из текущего лендинга.
 - **Trigger:** Нужно быстро развернуть CMS без ручного набора каждой секции.
 - **Owner:** Вы / команда.
-- **Last updated:** 2026-03-10
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/supabase/migrations/20260311160000_apply_landing_content_updates.sql`
+- **Purpose (RU):** Техническая миграция для записи свежих текстов, навигации, логотипа и настроек секций в облачный Supabase.
+- **Trigger:** Нужно применить точечные правки сайта в удаленную CMS через CLI без ручного SQL в Dashboard.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/nanabanana-prompts.md`
+- **Purpose (RU):** Готовые промты для генерации кухонь, карточек конструктора и lifestyle-сцен под сайт.
+- **Trigger:** Потребность быстро подготовить качественные изображения без ручного придумывания каждого описания.
+- **Owner:** Вы / дизайнер / контент-ответственный.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/public/pegas-logo-main.png`
+- **Purpose (RU):** Основной логотип Пегас для шапки и футера сайта в едином визуальном исполнении.
+- **Trigger:** Замена временного знака на логотип из предоставленного архива.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
 - **Lifecycle:** Active
 
 ### Entry

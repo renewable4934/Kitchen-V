@@ -22,6 +22,7 @@ export default async function Home() {
       />
       <Header
         brandName={content.site.brandName}
+        logo={content.assets[content.sections.footer.logoKey]}
         links={content.navigation.headerLinks}
         cta={content.navigation.headerCta}
         offerVariant={content.site.offerVariant}
@@ -31,6 +32,7 @@ export default async function Home() {
         <HeroSection content={content.sections.hero} assets={content.assets} />
         <ConfiguratorSection
           content={content.sections.configurator}
+          assets={content.assets}
           offerVariant={content.site.offerVariant}
           experimentKey={content.site.experimentKey}
         />
@@ -40,6 +42,7 @@ export default async function Home() {
       </main>
       <Footer
         brandName={content.site.brandName}
+        logo={content.assets[content.sections.footer.logoKey]}
         description={content.sections.footer.description}
         navigationTitle={content.sections.footer.navigationTitle}
         contactsTitle={content.sections.footer.contactsTitle}

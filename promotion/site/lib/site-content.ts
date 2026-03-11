@@ -21,6 +21,7 @@ export type HeroContent = {
   eyebrow: string
   title: string
   description: string
+  signature: string
   primaryCta: ActionLink
   secondaryCta: ActionLink
   imageKey: string
@@ -28,17 +29,30 @@ export type HeroContent = {
   statValue: string
 }
 
+export type ConfiguratorStepOption = {
+  value: string
+  label: string
+  imageKey?: string
+  imageAlt?: string
+}
+
 export type ConfiguratorStep = {
   id: string
   title: string
   description: string
-  options: Array<{ value: string; label: string }>
+  inputType?: "options" | "number"
+  placeholder?: string
+  min?: number
+  step?: number
+  options: ConfiguratorStepOption[]
 }
 
 export type DiscountOption = {
   value: string
   label: string
-  discount: string
+  discountLabel: string
+  discountType: "percent" | "fixed"
+  discountValue: number
 }
 
 export type ConfiguratorContent = {
@@ -70,10 +84,14 @@ export type ConfiguratorContent = {
 }
 
 export type PortfolioItem = {
+  slug: string
   name: string
   imageKey: string
   style: string
   review: string
+  galleryImageKeys: string[]
+  videoReviewUrl: string
+  videoReviewPosterKey: string
 }
 
 export type PortfolioContent = {
@@ -115,6 +133,7 @@ export type FooterContent = {
   navigationTitle: string
   contactsTitle: string
   privacyLabel: string
+  logoKey: string
 }
 
 export type SiteSettings = {
@@ -171,7 +190,7 @@ export const fallbackSiteContent: SiteContent = {
     slug: "home",
     title: "Пегас - Кухни, которые освобождают пространство и время",
     description:
-      "Премиальные кухни на заказ. Просто выбрать. Легко жить. 3D проект, изготовление за 14 дней, гарантия 5 лет.",
+      "Премиальные кухни на заказ. Просто выбрать. Легко жить. 3D-проект, изготовление за 14 дней, гарантия 5 лет.",
   },
   site: {
     siteId: "main",
@@ -188,146 +207,244 @@ export const fallbackSiteContent: SiteContent = {
   },
   navigation: {
     headerLinks: [
-      { label: "3D проект для Вас", href: "#configurator" },
+      { label: "3D-проект для Вас", href: "#configurator" },
       { label: "Портфолио", href: "#portfolio" },
       { label: "Контракт", href: "#contract" },
       { label: "Кухня и человек", href: "#lifestyle" },
     ],
     footerLinks: [
       { label: "Главная", href: "#hero" },
-      { label: "3D проект", href: "#configurator" },
+      { label: "3D-проект", href: "#configurator" },
       { label: "Портфолио", href: "#portfolio" },
       { label: "Контракт", href: "#contract" },
+      { label: "Кухня и человек", href: "#lifestyle" },
     ],
     headerCta: {
-      label: "Оставить заявку",
+      label: "Получить персональный расчет",
       href: "#configurator",
       eventName: "start_quiz",
     },
   },
   sections: {
     hero: {
-      eyebrow: "Расправьте крылья",
+      eyebrow: "",
       title: "Просто выбрать. Легко жить.",
-      description:
-        "Кухни, которые освобождают пространство и время. Больше не нужно искать подрядчика — всё просто и понятно.",
+      description: "",
+      signature: "Кухни, которые освобождают пространство и время",
       primaryCta: {
-        label: "Создать проект",
+        label: "Выбрать опции",
         href: "#configurator",
         eventName: "start_quiz",
       },
       secondaryCta: {
-        label: "Смотреть работы",
+        label: "Посмотреть проекты",
         href: "#portfolio",
       },
       imageKey: "hero-kitchen",
-      statLabel: "Срок изготовления",
-      statValue: "14 дней",
+      statLabel: "",
+      statValue: "",
     },
     configurator: {
-      eyebrow: "3D проект для Вас",
-      title: "Создайте свою кухню",
-      description: "Ответьте на несколько вопросов, и мы бесплатно подготовим 3D-проект",
+      eyebrow: "",
+      title: "Созидание замыслов",
+      description: "Благодаря Вашим ответам мы сможем подготовить индивидуальный 3D проект",
       steps: [
         {
           id: "style",
           title: "Атмосфера",
           description: "Выберите стиль кухни",
+          inputType: "options",
           options: [
-            { value: "modern", label: "Современный" },
-            { value: "classic", label: "Классический" },
-            { value: "scandinavian", label: "Скандинавский" },
-            { value: "minimalist", label: "Минимализм" },
-            { value: "loft", label: "Лофт" },
-            { value: "eco", label: "Эко" },
+            {
+              value: "scandinavian-minimalism",
+              label: "Скандинавский минимализм",
+              imageKey: "kitchen-1",
+              imageAlt: "Скандинавский минимализм",
+            },
+            {
+              value: "modern-classic",
+              label: "Современная классика",
+              imageKey: "kitchen-2",
+              imageAlt: "Современная классика",
+            },
+            {
+              value: "eco-style",
+              label: "Эко-стиль",
+              imageKey: "kitchen-3",
+              imageAlt: "Эко-стиль",
+            },
+            {
+              value: "premium",
+              label: "Премиум",
+              imageKey: "kitchen-4",
+              imageAlt: "Премиум",
+            },
           ],
+        },
+        {
+          id: "length",
+          title: "Длина кухни, пог. м",
+          description: "Укажите длину кухни",
+          inputType: "number",
+          placeholder: "Например: 3.2",
+          min: 1,
+          step: 0.1,
+          options: [],
         },
         {
           id: "shape",
           title: "Форма кухни",
           description: "Выберите конфигурацию",
+          inputType: "options",
           options: [
-            { value: "straight", label: "Прямая" },
-            { value: "l-shaped", label: "Угловая" },
-            { value: "u-shaped", label: "П-образная" },
+            { value: "straight", label: "Прямая", imageKey: "kitchen-1", imageAlt: "Прямая кухня" },
+            { value: "l-shaped", label: "Угловая", imageKey: "kitchen-2", imageAlt: "Угловая кухня" },
+            { value: "u-shaped", label: "П-образная", imageKey: "kitchen-4", imageAlt: "П-образная кухня" },
           ],
         },
         {
           id: "base-cabinets",
           title: "Напольные шкафы",
           description: "Тип нижних модулей",
+          inputType: "options",
           options: [
-            { value: "standard", label: "Стандартные" },
-            { value: "handleless", label: "Без ручек" },
+            {
+              value: "standard",
+              label: "Стандартные",
+              imageKey: "kitchen-2",
+              imageAlt: "Стандартные напольные шкафы",
+            },
+            {
+              value: "handleless",
+              label: "Без ручек",
+              imageKey: "kitchen-4",
+              imageAlt: "Напольные шкафы без ручек",
+            },
           ],
         },
         {
           id: "wall-cabinets",
           title: "Навесные шкафы",
           description: "Тип верхних модулей",
+          inputType: "options",
           options: [
-            { value: "standard", label: "Стандартные" },
-            { value: "handleless", label: "Без ручек" },
+            {
+              value: "standard",
+              label: "Стандартные",
+              imageKey: "kitchen-1",
+              imageAlt: "Стандартные навесные шкафы",
+            },
+            {
+              value: "handleless",
+              label: "Без ручек",
+              imageKey: "kitchen-4",
+              imageAlt: "Навесные шкафы без ручек",
+            },
           ],
         },
         {
           id: "oven",
           title: "Духовка",
           description: "Расположение духового шкафа",
+          inputType: "options",
           options: [
-            { value: "base", label: "В нижнем шкафу" },
-            { value: "tall", label: "В высоком шкафу" },
-            { value: "pencil", label: "В пенале" },
+            { value: "base", label: "В нижнем шкафу", imageKey: "kitchen-1", imageAlt: "Духовка в нижнем шкафу" },
+            { value: "tall", label: "В высоком шкафу", imageKey: "kitchen-2", imageAlt: "Духовка в высоком шкафу" },
+            { value: "pencil", label: "В пенале", imageKey: "kitchen-4", imageAlt: "Духовка в пенале" },
           ],
         },
         {
           id: "fridge",
           title: "Холодильник",
           description: "Расположение холодильника",
+          inputType: "options",
           options: [
-            { value: "builtin", label: "Встроен в шкаф" },
-            { value: "standalone", label: "Отдельно стоящий" },
-            { value: "side-by-side", label: "Side-by-Side" },
-            { value: "external", label: "Вне гарнитура" },
+            { value: "builtin", label: "Встроен в шкаф", imageKey: "kitchen-2", imageAlt: "Встроенный холодильник" },
+            {
+              value: "standalone",
+              label: "Отдельно стоящий",
+              imageKey: "kitchen-3",
+              imageAlt: "Отдельно стоящий холодильник",
+            },
+            { value: "side-by-side", label: "Side-by-Side", imageKey: "kitchen-4", imageAlt: "Холодильник Side-by-Side" },
+            { value: "external", label: "Вне гарнитура", imageKey: "hero-kitchen", imageAlt: "Холодильник вне гарнитура" },
           ],
         },
         {
           id: "sink",
-          title: "Мойка и ПМ",
-          description: "Мойка и посудомоечная машина",
+          title: "Мойка и посудомоечная машина",
+          description: "Выберите комбинацию мойки и посудомоечной машины",
+          inputType: "options",
           options: [
-            { value: "sink-only", label: "Только мойка" },
-            { value: "sink-pm45", label: "Мойка + ПМ 45" },
-            { value: "sink-pm60", label: "Мойка + ПМ 60" },
+            { value: "sink-only", label: "Только мойка", imageKey: "kitchen-1", imageAlt: "Кухня только с мойкой" },
+            {
+              value: "sink-dishwasher-45",
+              label: "Мойка + посудомоечная машина 45",
+              imageKey: "kitchen-2",
+              imageAlt: "Кухня с мойкой и посудомоечной машиной 45",
+            },
+            {
+              value: "sink-dishwasher-60",
+              label: "Мойка + посудомоечная машина 60",
+              imageKey: "kitchen-4",
+              imageAlt: "Кухня с мойкой и посудомоечной машиной 60",
+            },
           ],
         },
         {
           id: "cooktop",
           title: "Печь",
           description: "Тип варочной поверхности",
+          inputType: "options",
           options: [
-            { value: "electric", label: "Электрическая" },
-            { value: "induction", label: "Индукционная" },
-            { value: "gas", label: "Газовая" },
+            { value: "electric", label: "Электрическая", imageKey: "kitchen-3", imageAlt: "Электрическая варочная поверхность" },
+            { value: "induction", label: "Индукционная", imageKey: "kitchen-4", imageAlt: "Индукционная варочная поверхность" },
+            { value: "gas", label: "Газовая", imageKey: "hero-kitchen", imageAlt: "Газовая варочная поверхность" },
           ],
         },
         {
           id: "hood",
           title: "Вытяжка",
           description: "Тип вытяжки",
+          inputType: "options",
           options: [
-            { value: "builtin", label: "Встроенная" },
-            { value: "dome", label: "Купольная" },
-            { value: "angled", label: "Наклонная" },
+            { value: "builtin", label: "Встроенная", imageKey: "kitchen-2", imageAlt: "Встроенная вытяжка" },
+            { value: "dome", label: "Купольная", imageKey: "hero-kitchen", imageAlt: "Купольная вытяжка" },
+            { value: "angled", label: "Наклонная", imageKey: "kitchen-4", imageAlt: "Наклонная вытяжка" },
           ],
         },
       ],
       discountTitle: "Соберите скидку",
       discountDescription: "Выберите подходящие варианты для дополнительной скидки",
       discountOptions: [
-        { value: "video-review", label: "Оставить видеоотзыв", discount: "5%" },
-        { value: "standard-project", label: "Типовой проект", discount: "7%" },
-        { value: "stock-parts", label: "Детали со склада", discount: "10%" },
+        {
+          value: "video-review",
+          label: "Видеоотзыв",
+          discountLabel: "3%",
+          discountType: "percent",
+          discountValue: 3,
+        },
+        {
+          value: "standard-project",
+          label: "Типовой проект",
+          discountLabel: "5%",
+          discountType: "percent",
+          discountValue: 5,
+        },
+        {
+          value: "kitchen-wardrobe",
+          label: "Кухня + шкаф",
+          discountLabel: "4000 ₽",
+          discountType: "fixed",
+          discountValue: 4000,
+        },
+        {
+          value: "full-prepayment",
+          label: "100% предоплата",
+          discountLabel: "7%",
+          discountType: "percent",
+          discountValue: 7,
+        },
       ],
       contactTitle: "Бесплатный 3D-проект",
       contactDescription: "Оставьте контакты, и мы подготовим дизайн-проект для Вас",
@@ -350,98 +467,107 @@ export const fallbackSiteContent: SiteContent = {
       },
     },
     portfolio: {
-      eyebrow: "Портфолио",
+      eyebrow: "",
       title: "Выполненные проекты",
       description:
         "Каждая кухня — индивидуальная история, созданная с вниманием к деталям и любовью к своему делу.",
       items: [
         {
+          slug: "anna-scandinavian",
           name: "Анна",
           imageKey: "kitchen-1",
           style: "Скандинавский минимализм",
           review:
             "Кухня мечты! Всё продумано до мелочей, от планировки до освещения. Процесс заказа был настолько простым, что я не верила своим глазам.",
+          galleryImageKeys: ["kitchen-1", "hero-kitchen", "kitchen-2"],
+          videoReviewUrl: "",
+          videoReviewPosterKey: "kitchen-1",
         },
         {
+          slug: "mihail-modern-classic",
           name: "Михаил",
           imageKey: "kitchen-2",
           style: "Современная классика",
           review:
             "Профессиональный подход на каждом этапе. 3D-проект полностью совпал с результатом. Рекомендую всем, кто ценит качество.",
+          galleryImageKeys: ["kitchen-2", "kitchen-4", "hero-kitchen"],
+          videoReviewUrl: "",
+          videoReviewPosterKey: "kitchen-2",
         },
         {
+          slug: "elena-eco-style",
           name: "Елена",
           imageKey: "kitchen-3",
           style: "Эко-стиль",
           review:
             "Мы долго искали мастеров, которые поймут нашу идею. Пегас превзошёл все ожидания — кухня стала сердцем нашего дома.",
+          galleryImageKeys: ["kitchen-3", "kitchen-1", "hero-kitchen"],
+          videoReviewUrl: "",
+          videoReviewPosterKey: "kitchen-3",
         },
         {
+          slug: "petr-premium",
           name: "Пётр",
           imageKey: "kitchen-4",
           style: "Премиум",
           review:
             "Качество материалов и сборки на высшем уровне. Кухня работает как швейцарские часы. Спасибо команде Пегас!",
+          galleryImageKeys: ["kitchen-4", "hero-kitchen", "kitchen-2"],
+          videoReviewUrl: "",
+          videoReviewPosterKey: "kitchen-4",
         },
       ],
     },
     contract: {
-      eyebrow: "Контракт",
+      eyebrow: "",
       title: "Прозрачные условия",
-      description:
-        "Мы делаем процесс покупки кухни простым и предсказуемым — от первого звонка до установки.",
+      description: "Процесс покупки кухни простой и предсказуемый — от первого звонка до установки",
       cards: [
         {
           icon: "clock",
-          title: "Начать готовить — быстрее",
-          description:
-            "Уже через 14 дней кухня может быть Вашей. Быстрое производство без потери качества.",
-          highlight: "14 дней",
+          title: "14 дней срок поставки",
+          description: "Начать готовить — быстрее",
+          highlight: "",
         },
         {
           icon: "shield",
-          title: "Оставаться спокойным — дольше",
-          description:
-            "Полная гарантия 5 лет на все материалы и работу. Мы уверены в каждом изделии.",
-          highlight: "5 лет гарантии",
-        },
-        {
-          icon: "wrench",
-          title: "Укомплектовка техникой",
-          description:
-            "Подберём и установим всю встраиваемую бытовую технику. Всё в одном месте.",
-          highlight: "Под ключ",
+          title: "5 лет гарантии на всё",
+          description: "Оставаться спокойным — дольше",
+          highlight: "",
         },
         {
           icon: "banknote",
-          title: "Покупать — выгодно",
-          description:
-            "Прозрачное ценообразование без скрытых платежей. Погонный метр от 70 000 руб.",
-          highlight: "от 70 000 ₽/м",
+          title: "70 000 ₽/м стоимость кухни",
+          description: "Покупать — выгоднее",
+          highlight: "",
+        },
+        {
+          icon: "wrench",
+          title: "1 подрядчик",
+          description: "Передать под ключ — надежнее",
+          highlight: "",
         },
       ],
     },
     lifestyle: {
-      eyebrow: "Кухня и человек",
+      eyebrow: "",
       title: "Больше, чем мебель",
-      description:
-        "Кухня — это место, где начинается и заканчивается каждый день. Пространство для жизни, творчества и любви.",
+      description: "Кухня — это место, где начинается и заканчивается каждый день. Простор для жизни, творчества и любви",
       items: [
         {
           imageKey: "lifestyle-coffee",
-          title: "Утренний кофе",
-          description: "Начните день с идеальной чашки в пространстве, созданном для вдохновения",
+          title: "Утренняя бодрость",
+          description: "Начните день с идеальной чашки кофе в пространстве, созданном для вдохновения",
         },
         {
           imageKey: "lifestyle-cooking",
           title: "Совместная готовка",
-          description:
-            "Кухня как место встреч — где рождаются вкусы и укрепляются отношения",
+          description: "Кухня как место встреч",
         },
         {
           imageKey: "lifestyle-family",
           title: "Семейный очаг",
-          description: "Пространство, где каждый член семьи чувствует тепло и уют",
+          description: "Уголок, где каждый член семьи чувствует тепло и уют",
         },
         {
           imageKey: "lifestyle-creative",
@@ -452,14 +578,19 @@ export const fallbackSiteContent: SiteContent = {
       ],
     },
     footer: {
-      description:
-        "Кухни, которые освобождают пространство и время. Проектирование, изготовление и установка под ключ.",
+      description: "Свобода для полёта мечты",
       navigationTitle: "Навигация",
       contactsTitle: "Контакты",
       privacyLabel: "Политика конфиденциальности",
+      logoKey: "pegas-logo-main",
     },
   },
   assets: {
+    "pegas-logo-main": {
+      assetKey: "pegas-logo-main",
+      publicUrl: "/pegas-logo-main.png",
+      alt: "Логотип Пегас",
+    },
     "hero-kitchen": {
       assetKey: "hero-kitchen",
       publicUrl: "/images/hero-kitchen.jpg",

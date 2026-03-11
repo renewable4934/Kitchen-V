@@ -1,20 +1,22 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 
-import type { ActionLink, NavLink } from "@/lib/site-content"
+import type { ActionLink, CmsAsset, NavLink } from "@/lib/site-content"
 import { trackSiteEvent } from "@/lib/tracking"
 
 type HeaderProps = {
   brandName: string
+  logo?: CmsAsset
   links: NavLink[]
   cta: ActionLink
   offerVariant: string | null
   experimentKey: string | null
 }
 
-export function Header({ brandName, links, cta, offerVariant, experimentKey }: HeaderProps) {
+export function Header({ brandName, logo, links, cta, offerVariant, experimentKey }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleQuizStart = () => {
@@ -31,12 +33,18 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <a href="#hero" className="flex items-center gap-2">
-          <PegasusLogo />
-          <span className="font-serif text-xl font-bold tracking-tight text-foreground">{brandName}</span>
+        <a href="#hero" className="flex items-center">
+          <Image
+            src={logo?.publicUrl || "/pegas-logo-main.png"}
+            alt={logo?.alt || `Логотип ${brandName}`}
+            width={170}
+            height={48}
+            className="h-10 w-auto"
+            priority
+          />
         </a>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-[2.75rem] md:flex">
           {links.map((link) => (
             <a
               key={link.href}
@@ -92,38 +100,5 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
         </div>
       )}
     </header>
-  )
-}
-
-function PegasusLogo() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M16 2C14 6 10 8 8 12C6 16 8 20 10 22C12 24 14 26 16 30C18 26 20 24 22 22C24 20 26 16 24 12C22 8 18 6 16 2Z"
-        fill="currentColor"
-        className="text-primary"
-      />
-      <path
-        d="M10 14C8 12 4 12 2 14C4 14 6 16 8 18"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        className="text-primary"
-      />
-      <path
-        d="M22 14C24 12 28 12 30 14C28 14 26 16 24 18"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        className="text-primary"
-      />
-    </svg>
   )
 }

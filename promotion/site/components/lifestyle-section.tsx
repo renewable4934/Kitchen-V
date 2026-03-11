@@ -12,8 +12,7 @@ export function LifestyleSection({ content, assets }: LifestyleSectionProps) {
     <section className="py-24" id="lifestyle">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">{content.eyebrow}</p>
-          <h2 className="mt-3 font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
+          <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             {content.title}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
