@@ -40,8 +40,7 @@ function normalizePortfolioItems(
       items.find(
         (item) =>
           isRecord(item) &&
-          ((typeof item.slug === "string" && item.slug === fallbackItem.slug) ||
-            (typeof item.name === "string" && item.name === fallbackItem.name) ||
+          ((typeof item.name === "string" && item.name === fallbackItem.name) ||
             (typeof item.imageKey === "string" && item.imageKey === fallbackItem.imageKey)),
       ) || items[index]
 
@@ -96,19 +95,27 @@ function normalizeDiscountOptions(
 }
 
 function normalizeContent(merged: SiteContent) {
-  merged.sections.portfolio.items = normalizePortfolioItems(
-    merged.sections.portfolio.items,
-    fallbackSiteContent.sections.portfolio.items,
-  )
+  const canonical = cloneFallback()
 
+  merged.navigation.headerLinks = canonical.navigation.headerLinks
+  merged.navigation.footerLinks = canonical.navigation.footerLinks
+  merged.navigation.headerCta = canonical.navigation.headerCta
+
+  merged.sections.hero = canonical.sections.hero
+  merged.sections.configurator = canonical.sections.configurator
+  merged.sections.portfolio = canonical.sections.portfolio
+  merged.sections.contract = canonical.sections.contract
+  merged.sections.lifestyle = canonical.sections.lifestyle
+  merged.sections.footer = canonical.sections.footer
+
+  merged.sections.portfolio.items = normalizePortfolioItems(merged.sections.portfolio.items, canonical.sections.portfolio.items)
   merged.sections.configurator.steps = normalizeConfiguratorSteps(
     merged.sections.configurator.steps,
-    fallbackSiteContent.sections.configurator.steps,
+    canonical.sections.configurator.steps,
   )
-
   merged.sections.configurator.discountOptions = normalizeDiscountOptions(
     merged.sections.configurator.discountOptions,
-    fallbackSiteContent.sections.configurator.discountOptions,
+    canonical.sections.configurator.discountOptions,
   )
 
   return merged
