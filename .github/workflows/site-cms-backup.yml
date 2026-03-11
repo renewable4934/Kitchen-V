@@ -1,0 +1,104 @@
+# Title: Site CMS backup workflow
+# Purpose: stores hosted Supabase CMS table snapshots as GitHub Actions artifacts for production and staging.
+# Owner: Project team
+# Last updated: 2026-03-11
+
+name: Site CMS Backup
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: "Which environment to back up manually"
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  contents: read
+
+jobs:
+  backup-production:
+    if: github.event_name == 'schedule' || github.event.inputs.target_environment == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Validate backup secrets
+        run: |
+          set -euo pipefail
+          for key in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+
+      - name: Export production CMS tables
+        run: |
+          set -euo pipefail
+          backup_dir="$RUNNER_TEMP/cms-production"
+          mkdir -p "$backup_dir"
+          for table in cms_sites cms_pages cms_sections cms_navigation cms_assets; do
+            curl --fail --show-error --silent \
+              "${SUPABASE_URL}/rest/v1/${table}?select=*" \
+              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Accept-Profile: public" | jq '.' > "${backup_dir}/${table}.json"
+          done
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > "${backup_dir}/backup-timestamp.txt"
+
+      - name: Upload production backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-backup-production-${{ github.run_id }}
+          path: ${{ runner.temp }}/cms-production
+          retention-days: 14
+
+  backup-staging:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target_environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Validate backup secrets
+        run: |
+          set -euo pipefail
+          for key in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+
+      - name: Export staging CMS tables
+        run: |
+          set -euo pipefail
+          backup_dir="$RUNNER_TEMP/cms-staging"
+          mkdir -p "$backup_dir"
+          for table in cms_sites cms_pages cms_sections cms_navigation cms_assets; do
+            curl --fail --show-error --silent \
+              "${SUPABASE_URL}/rest/v1/${table}?select=*" \
+              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Accept-Profile: public" | jq '.' > "${backup_dir}/${table}.json"
+          done
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > "${backup_dir}/backup-timestamp.txt"
+
+      - name: Upload staging backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-backup-staging-${{ github.run_id }}
+          path: ${{ runner.temp }}/cms-staging
+          retention-days: 14

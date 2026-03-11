@@ -1,6 +1,11 @@
 // Purpose: shared validation and persistence logic for Next.js route handlers.
 
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase"
+import {
+  getSupabaseWriteClient,
+  getSupabaseWriteMode,
+  isSupabaseCmsConfigured,
+  isSupabaseWriteConfigured,
+} from "@/lib/supabase"
 
 const allowedFunnels = new Set(["kitchen", "wardrobe"])
 const allowedEvents = new Set(["view_offer", "click_call", "start_quiz", "submit_lead", "open_whatsapp"])
@@ -34,9 +39,9 @@ function getRequestMeta(request: Request) {
 }
 
 function getClient() {
-  const client = getSupabaseClient()
+  const client = getSupabaseWriteClient()
   if (!client) {
-    throw new Error("Supabase is not configured")
+    throw new Error("Supabase write client is not configured")
   }
   return client
 }
@@ -45,7 +50,10 @@ export function getHealthStatus() {
   return {
     status: "ok",
     timestamp: new Date().toISOString(),
-    supabase_enabled: isSupabaseConfigured(),
+    supabase_enabled: isSupabaseCmsConfigured(),
+    supabase_cms_enabled: isSupabaseCmsConfigured(),
+    supabase_write_enabled: isSupabaseWriteConfigured(),
+    supabase_write_mode: getSupabaseWriteMode(),
   }
 }
 

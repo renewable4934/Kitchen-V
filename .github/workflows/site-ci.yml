@@ -1,0 +1,56 @@
+# Title: Site CI workflow
+# Purpose: validates promotion/site on pushes and pull requests before deployment.
+# Owner: Project team
+# Last updated: 2026-03-11
+
+name: Site CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+    paths:
+      - "promotion/site/**"
+      - ".github/workflows/site-ci.yml"
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - "promotion/site/**"
+      - ".github/workflows/site-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: npm
+          cache-dependency-path: promotion/site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: promotion/site
+        run: npm ci
+
+      - name: Run typecheck
+        working-directory: promotion/site
+        run: npm run typecheck
+
+      - name: Run production build
+        working-directory: promotion/site
+        run: npm run build

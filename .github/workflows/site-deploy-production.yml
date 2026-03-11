@@ -1,0 +1,128 @@
+# Title: Site production deploy workflow
+# Purpose: deploys promotion/site to the production app instance on Aeza after main branch updates.
+# Owner: Project team
+# Last updated: 2026-03-11
+
+name: Site Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "promotion/site/**"
+      - ".github/workflows/site-deploy-production.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      APP_DIR: ${{ secrets.APP_DIR }}
+      APP_PORT: ${{ secrets.APP_PORT }}
+      APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
+      SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      CRM_WEBHOOK_URL: ${{ secrets.CRM_WEBHOOK_URL }}
+      BITRIX24_WEBHOOK_URL: ${{ secrets.BITRIX24_WEBHOOK_URL }}
+      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: npm
+          cache-dependency-path: promotion/site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: promotion/site
+        run: npm ci
+
+      - name: Run typecheck
+        working-directory: promotion/site
+        run: npm run typecheck
+
+      - name: Run production build
+        working-directory: promotion/site
+        run: npm run build
+
+      - name: Validate deploy secrets
+        run: |
+          set -euo pipefail
+          for key in SSH_HOST SSH_USER SSH_PRIVATE_KEY APP_DIR APP_PORT SERVICE_NAME SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+
+      - name: Prepare runtime env file
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/site.env" <<EOF
+          NODE_ENV=production
+          PORT=${APP_PORT}
+          SUPABASE_URL=${SUPABASE_URL}
+          SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+          SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+          CRM_WEBHOOK_URL=${CRM_WEBHOOK_URL}
+          BITRIX24_WEBHOOK_URL=${BITRIX24_WEBHOOK_URL}
+          EOF
+
+      - name: Prepare release archive
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            -czf "$RUNNER_TEMP/site-release.tgz" \
+            -C promotion/site \
+            .
+
+      - name: Configure SSH
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Upload release package
+        run: |
+          set -euo pipefail
+          scp -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site-release.tgz" "${SSH_USER}@${SSH_HOST}:/tmp/site-release.tgz"
+          scp -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site.env" "${SSH_USER}@${SSH_HOST}:/tmp/site.env"
+          scp -P "${SSH_PORT:-22}" "promotion/site/ops/deploy-release.sh" "${SSH_USER}@${SSH_HOST}:/tmp/deploy-release.sh"
+
+      - name: Activate release on server
+        run: |
+          set -euo pipefail
+          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
+            "chmod +x /tmp/deploy-release.sh && APP_DIR='${APP_DIR}' SERVICE_NAME='${SERVICE_NAME}' APP_PORT='${APP_PORT}' RELEASE_ARCHIVE='/tmp/site-release.tgz' ENV_FILE='/tmp/site.env' bash /tmp/deploy-release.sh"
+
+      - name: Check public health endpoint
+        if: env.HEALTHCHECK_URL != ''
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --retry 10 --retry-delay 5 "$HEALTHCHECK_URL"

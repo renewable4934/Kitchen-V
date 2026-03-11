@@ -1,7 +1,7 @@
 # Title: Kitchen_V Project Index
 **Purpose:** Человеческая карта проекта: где лежат материалы, зачем они нужны и что делать дальше.  
 **Owner:** Вы (основной пользователь), команда проекта (исполнители).  
-**Last updated:** 2026-03-10
+**Last updated:** 2026-03-11
 
 ## Project status
 1. Структура проекта приведена к единым сущностям: promotion, analytics, sales, crm, account-management, project-management, archive.
@@ -15,6 +15,9 @@
 9. Добавлена human zone `kitchen_obsidian/` для двусторонней синхронизации категорий с Obsidian (без удаления данных).
 10. Автосинхронизация включена через `launchd` каждые 15 минут для `kitchen_obsidian/vault/` и `kitchen_obsidian/local-zone/`.
 11. Старый Anytype-контур выведен из active-зоны и перенесен в `archive/legacy-anytype/`.
+12. Добавлен deploy-only контур для `promotion/site`: GitHub Actions, server ops templates и migration discipline для Supabase.
+13. Сайт теперь проектируется как две среды: `staging` и `production`, с hosted Supabase как источником контента и Aeza как runtime-сервером.
+14. На сервере включён базовый perimeter: `Caddy`, `fail2ban`, `ufw` и минимальный SSH hardening без отключения текущего парольного входа.
 
 ## Core files
 Зачем сущность: базовые документы-навигаторы, которые поддерживают понятность проекта.
@@ -76,6 +79,41 @@
 - **Last updated:** 2026-03-05
 - **Lifecycle:** Active
 
+### Entry
+- **Path:** `.github/workflows/site-ci.yml`
+- **Purpose (RU):** Автоматическая проверка сайта перед релизом: установка зависимостей, typecheck и production build только для `promotion/site`.
+- **Trigger:** Потребность перестать выкладывать сайт на сервер без автоматической проверки.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `.github/workflows/site-deploy-staging.yml`
+- **Purpose (RU):** Автодеплой ветки `staging` на staging-инстанс сайта на сервере Aeza.
+- **Trigger:** Появление отдельного тестового контура перед боевым релизом.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+- **Next step:** Заполнить GitHub environment `staging` секретами и SSH-доступом deploy-user.
+
+### Entry
+- **Path:** `.github/workflows/site-deploy-production.yml`
+- **Purpose (RU):** Автодеплой ветки `main` на production-инстанс сайта на сервере Aeza.
+- **Trigger:** Нужен повторяемый боевой релиз без ручного SSH-copy/paste.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+- **Next step:** Заполнить GitHub environment `production` секретами и healthcheck URL.
+
+### Entry
+- **Path:** `.github/workflows/site-cms-backup.yml`
+- **Purpose (RU):** Делает backup CMS-таблиц из hosted Supabase в GitHub Actions artifact.
+- **Trigger:** Контент сайта живёт в Supabase и его нужно сохранять без превращения в git-коммиты.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+- **Next step:** Включить secrets `SUPABASE_URL` и `SUPABASE_SERVICE_ROLE_KEY` для production и staging.
+
 ## promotion
 Зачем сущность: привлечение лидов через сайт и рекламные каналы.
 
@@ -84,17 +122,26 @@
 - **Purpose (RU):** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.
 - **Trigger:** Перенос всех материалов сайта в единую папку сайта.
 - **Owner:** Вы / команда.
-- **Last updated:** 2026-03-10
+- **Last updated:** 2026-03-11
 - **Lifecycle:** Active
-- **Next step:** Наполнять CMS в Supabase и готовить подключение CRM/рекламных систем.
+- **Next step:** Подключить staging/prod GitHub environments, deploy-user и серверные конфиги на Aeza.
 
 ### Entry
 - **Path:** `promotion/site/README.md`
 - **Purpose (RU):** Пошаговая инструкция по запуску сайта, подключению Supabase и проверке API.
 - **Trigger:** Переход сайта с Express на Next.js и появление CMS-слоя.
 - **Owner:** Вы / команда.
-- **Last updated:** 2026-03-10
+- **Last updated:** 2026-03-11
 - **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/nanabanana-prompts.md`
+- **Purpose (RU):** Отдельный рабочий набор промтов для генерации изображений кухонь, шагов конструктора и lifestyle-сцен сайта.
+- **Trigger:** Понадобился понятный единый документ для дальнейшей генерации новых визуалов.
+- **Owner:** Вы.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+- **Next step:** Использовать промты при следующем обновлении изображений сайта.
 
 ### Entry
 - **Path:** `promotion/site/supabase/schema.sql`
@@ -103,6 +150,15 @@
 - **Owner:** Вы / команда.
 - **Last updated:** 2026-03-10
 - **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/supabase/migrations/20260311160000_apply_landing_content_updates.sql`
+- **Purpose (RU):** Фиксирует в репозитории текущее состояние боевого контента CMS, которое уже было применено в hosted Supabase.
+- **Trigger:** Обнаружен drift между remote Supabase и локальной папкой `migrations/`.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+- **Next step:** Дальше любые schema/content migrations оформлять только через новые SQL-файлы в репозитории.
 
 ### Entry
 - **Path:** `promotion/site/supabase/cms_seed.sql`
@@ -120,6 +176,55 @@
 - **Last updated:** 2026-03-10
 - **Lifecycle:** Active
 - **Next step:** Не развивать дальше, использовать только как reference до финальной чистки.
+
+### Entry
+- **Path:** `promotion/site/public/images/configurator/`
+- **Purpose (RU):** Локальные изображения для карточек выбора в конструкторе, чтобы шаги опросника показывались с картинками.
+- **Trigger:** По ТЗ в конструктор добавлены визуальные карточки для шагов выбора.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/public/images/portfolio/`
+- **Purpose (RU):** Дополнительные фотографии кухонь для модальных окон проектов в портфолио.
+- **Trigger:** По ТЗ у каждого проекта появилась собственная галерея фото внутри модального окна.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/ops/bootstrap-server.sh`
+- **Purpose (RU):** Скрипт первичной подготовки Aeza-сервера: установка Node.js, Caddy, fail2ban, ufw, структуры каталогов и deploy-user.
+- **Trigger:** Переход с концепции Vercel на собственный runtime-сервер Aeza.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+- **Next step:** Запустить на сервере после подтверждения модели staging/prod и добавить SSH-ключ deploy-user.
+
+### Entry
+- **Path:** `promotion/site/ops/deploy-release.sh`
+- **Purpose (RU):** Серверный скрипт выкладки новой версии сайта с проверкой `/api/health` и rollback при неуспехе.
+- **Trigger:** Нужен безопасный релиз без ручной последовательности команд через SSH.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/ops/nginx-site.conf.template`
+- **Purpose (RU):** Шаблон Caddy-конфига для домена сайта, reverse proxy и локального порта приложения.
+- **Trigger:** На одном сервере нужно уметь поднять production и staging раздельно и понятно.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/ops/systemd-site.service.template`
+- **Purpose (RU):** Шаблон systemd-сервиса для фонового запуска Next.js и автоперезапуска после сбоев.
+- **Trigger:** Сайт должен работать как системный сервис, а не как команда в открытом SSH-окне.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-11
+- **Lifecycle:** Active
 
 ### Entry
 - **Path:** `promotion/yandex-direct/ads-checklist.md`

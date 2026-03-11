@@ -1,0 +1,23 @@
+# Title: Systemd service template
+# Purpose: runs one Next.js site instance from the current release symlink with a shared env file.
+# Owner: Project team
+# Last updated: 2026-03-11
+
+[Unit]
+Description=__SERVICE_NAME__ Next.js site
+After=network.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+WorkingDirectory=__APP_DIR__/current
+EnvironmentFile=__APP_DIR__/shared/.env
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=__APP_PORT__
+ExecStart=/usr/bin/env npm run start -- --hostname 127.0.0.1 --port __APP_PORT__
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target

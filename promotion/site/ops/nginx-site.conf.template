@@ -1,0 +1,15 @@
+# Title: Caddy site template
+# Purpose: reverse proxy template for one site instance running behind systemd on localhost.
+# Owner: Project team
+# Last updated: 2026-03-11
+
+__APP_DOMAIN__ {
+    encode gzip zstd
+
+    reverse_proxy 127.0.0.1:__APP_PORT__
+
+    log {
+        output file /var/log/caddy/__SERVICE_NAME__.access.log
+        format json
+    }
+  }

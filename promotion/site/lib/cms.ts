@@ -1,7 +1,7 @@
 // Purpose: loads the landing content from Supabase CMS tables and safely falls back to the exact v0 copy.
 
 import { fallbackSiteContent, type CmsAsset, type SiteContent } from "@/lib/site-content"
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase"
+import { getSupabaseCmsClient, isSupabaseCmsConfigured } from "@/lib/supabase"
 
 type JsonRecord = Record<string, unknown>
 
@@ -27,6 +27,91 @@ function deepMerge<T>(base: T, override: unknown): T {
 
 function cloneFallback() {
   return structuredClone(fallbackSiteContent)
+}
+
+function normalizePortfolioItems(
+  incomingItems: unknown,
+  fallbackItems: SiteContent["sections"]["portfolio"]["items"],
+) {
+  const items = Array.isArray(incomingItems) ? incomingItems : []
+
+  return fallbackItems.map((fallbackItem, index) => {
+    const matched =
+      items.find(
+        (item) =>
+          isRecord(item) &&
+          ((typeof item.slug === "string" && item.slug === fallbackItem.slug) ||
+            (typeof item.name === "string" && item.name === fallbackItem.name) ||
+            (typeof item.imageKey === "string" && item.imageKey === fallbackItem.imageKey)),
+      ) || items[index]
+
+    return deepMerge(fallbackItem, matched)
+  })
+}
+
+function normalizeConfiguratorSteps(
+  incomingSteps: unknown,
+  fallbackSteps: SiteContent["sections"]["configurator"]["steps"],
+) {
+  const steps = Array.isArray(incomingSteps) ? incomingSteps : []
+
+  return fallbackSteps.map((fallbackStep, index) => {
+    const matched =
+      steps.find((step) => isRecord(step) && typeof step.id === "string" && step.id === fallbackStep.id) || steps[index]
+
+    const mergedStep = deepMerge(fallbackStep, matched)
+    const matchedOptions = isRecord(matched) && Array.isArray(matched.options) ? matched.options : []
+
+    if (Array.isArray(fallbackStep.options)) {
+      mergedStep.options = fallbackStep.options.map((fallbackOption, optionIndex) => {
+        const matchedOption =
+          matchedOptions.find(
+            (option) =>
+              isRecord(option) && typeof option.value === "string" && option.value === fallbackOption.value,
+          ) || matchedOptions[optionIndex]
+
+        return deepMerge(fallbackOption, matchedOption)
+      })
+    }
+
+    return mergedStep
+  })
+}
+
+function normalizeDiscountOptions(
+  incomingDiscounts: unknown,
+  fallbackDiscounts: SiteContent["sections"]["configurator"]["discountOptions"],
+) {
+  const discounts = Array.isArray(incomingDiscounts) ? incomingDiscounts : []
+
+  return fallbackDiscounts.map((fallbackDiscount, index) => {
+    const matched =
+      discounts.find(
+        (discount) =>
+          isRecord(discount) && typeof discount.value === "string" && discount.value === fallbackDiscount.value,
+      ) || discounts[index]
+
+    return deepMerge(fallbackDiscount, matched)
+  })
+}
+
+function normalizeContent(merged: SiteContent) {
+  merged.sections.portfolio.items = normalizePortfolioItems(
+    merged.sections.portfolio.items,
+    fallbackSiteContent.sections.portfolio.items,
+  )
+
+  merged.sections.configurator.steps = normalizeConfiguratorSteps(
+    merged.sections.configurator.steps,
+    fallbackSiteContent.sections.configurator.steps,
+  )
+
+  merged.sections.configurator.discountOptions = normalizeDiscountOptions(
+    merged.sections.configurator.discountOptions,
+    fallbackSiteContent.sections.configurator.discountOptions,
+  )
+
+  return merged
 }
 
 function normalizeAssets(assetRows: Array<{ asset_key: string; public_url: string; alt: string }> = []) {
@@ -61,7 +146,7 @@ function buildNavigation(rows: Array<{ area: string; label: string; href: string
 
 export async function loadSiteContent(): Promise<SiteContent> {
   const fallback = cloneFallback()
-  const client = getSupabaseClient()
+  const client = getSupabaseCmsClient()
 
   if (!client) {
     return fallback
@@ -165,14 +250,14 @@ export async function loadSiteContent(): Promise<SiteContent> {
     merged.assets = deepMerge(merged.assets, normalizeAssets(assetResult.data))
   }
 
-  return merged
+  return normalizeContent(merged)
 }
 
 export async function getCmsBootstrap() {
   const content = await loadSiteContent()
   return {
     ok: true,
-    cms_enabled: isSupabaseConfigured(),
+    cms_enabled: isSupabaseCmsConfigured(),
     source: content.source,
     diagnostics: content.diagnostics,
     page_slug: content.page.slug,
