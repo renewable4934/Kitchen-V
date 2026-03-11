@@ -18,8 +18,7 @@ export function ContractSection({ content }: ContractSectionProps) {
     <section className="py-24" id="contract">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 max-w-2xl">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">{content.eyebrow}</p>
-          <h2 className="mt-3 font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
+          <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             {content.title}
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{content.description}</p>
@@ -37,8 +36,7 @@ export function ContractSection({ content }: ContractSectionProps) {
                   <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <p className="mb-2 font-serif text-2xl font-bold text-primary">{card.highlight}</p>
-                <h3 className="mb-2 text-lg font-semibold text-foreground">{card.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{card.description}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{card.title}</p>
               </div>
             )
           })}

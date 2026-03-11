@@ -1,15 +1,39 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 
-import type { ConfiguratorContent } from "@/lib/site-content"
+import type { ConfiguratorContent, DiscountOption } from "@/lib/site-content"
 import { getTrackingContext, trackSiteEvent } from "@/lib/tracking"
 
 type ConfiguratorSectionProps = {
   content: ConfiguratorContent
   offerVariant: string | null
   experimentKey: string | null
+}
+
+function buildDiscountPayload(discounts: string[], options: DiscountOption[]) {
+  return discounts
+    .map((value) => {
+      const option = options.find((item) => item.value === value)
+      if (!option) {
+        return null
+      }
+
+      return {
+        value: option.value,
+        label: option.label,
+        discount: option.discount,
+        kind: option.kind || "percent",
+        amount: option.amount ?? 0,
+      }
+    })
+    .filter(Boolean)
+}
+
+function isDirectImage(path?: string) {
+  return Boolean(path?.startsWith("/"))
 }
 
 export function ConfiguratorSection({
@@ -34,6 +58,8 @@ export function ConfiguratorSection({
   const isDiscountStep = currentStep === content.steps.length
   const isContactStep = currentStep === content.steps.length + 1
   const progress = ((currentStep + 1) / totalSteps) * 100
+  const currentConfiguratorStep = content.steps[currentStep]
+  const isNumberStep = currentConfiguratorStep?.kind === "number"
 
   const handleSelect = (stepId: string, value: string) => {
     setSelections((prev) => ({ ...prev, [stepId]: value }))
@@ -50,7 +76,10 @@ export function ConfiguratorSection({
     if (isDiscountStep) {
       return true
     }
-    return Boolean(selections[content.steps[currentStep]?.id])
+    if (isNumberStep) {
+      return Boolean(selections[currentConfiguratorStep.id]?.trim())
+    }
+    return Boolean(selections[currentConfiguratorStep?.id])
   }
 
   const handleNext = () => {
@@ -80,7 +109,7 @@ export function ConfiguratorSection({
       prefer_messenger: contactInfo.messenger,
       quiz_answers: {
         selections,
-        discounts: selectedDiscounts,
+        discounts: buildDiscountPayload(selectedDiscounts, content.discountOptions),
       },
       offer_variant: offerVariant,
       experiment_key: experimentKey,
@@ -104,7 +133,7 @@ export function ConfiguratorSection({
         experiment_key: experimentKey,
         metadata: {
           placement: "configurator",
-          discounts: selectedDiscounts,
+          discounts: buildDiscountPayload(selectedDiscounts, content.discountOptions),
         },
       })
 
@@ -135,7 +164,6 @@ export function ConfiguratorSection({
     <section className="bg-card py-24" id="configurator">
       <div className="mx-auto max-w-3xl px-6">
         <div className="mb-12 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">{content.eyebrow}</p>
           <h2 className="mt-3 font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             {content.title}
           </h2>
@@ -156,35 +184,67 @@ export function ConfiguratorSection({
         </div>
 
         <div className="rounded-xl border border-border bg-background p-8">
-          {!isDiscountStep && !isContactStep && (
+          {!isDiscountStep && !isContactStep ? (
             <div>
-              <h3 className="font-serif text-2xl font-bold text-foreground">{content.steps[currentStep].title}</h3>
-              <p className="mt-1 text-muted-foreground">{content.steps[currentStep].description}</p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {content.steps[currentStep].options.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => handleSelect(content.steps[currentStep].id, option.value)}
-                    className={`rounded-lg border p-4 text-left transition-all ${
-                      selections[content.steps[currentStep].id] === option.value
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "border-border hover:border-primary/30"
-                    }`}
-                  >
-                    <span
-                      className={`text-base font-medium ${
-                        selections[content.steps[currentStep].id] === option.value ? "text-primary" : "text-foreground"
+              <h3 className="font-serif text-2xl font-bold text-foreground">{currentConfiguratorStep.title}</h3>
+              {currentConfiguratorStep.description ? (
+                <p className="mt-1 text-muted-foreground">{currentConfiguratorStep.description}</p>
+              ) : null}
+
+              {isNumberStep ? (
+                <div className="mt-6">
+                  <label htmlFor={currentConfiguratorStep.id} className="mb-2 block text-sm font-medium text-foreground">
+                    {currentConfiguratorStep.fieldLabel}
+                  </label>
+                  <input
+                    id={currentConfiguratorStep.id}
+                    type="number"
+                    inputMode="decimal"
+                    step={currentConfiguratorStep.step || "0.1"}
+                    min="0"
+                    value={selections[currentConfiguratorStep.id] || ""}
+                    onChange={(event) => handleSelect(currentConfiguratorStep.id, event.target.value)}
+                    placeholder={currentConfiguratorStep.placeholder}
+                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              ) : (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {currentConfiguratorStep.options?.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleSelect(currentConfiguratorStep.id, option.value)}
+                      className={`overflow-hidden rounded-lg border text-left transition-all ${
+                        selections[currentConfiguratorStep.id] === option.value
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border hover:border-primary/30"
                       }`}
                     >
-                      {option.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+                      {option.imageKey ? (
+                        <div className="relative aspect-[4/3] w-full">
+                          <Image
+                            src={isDirectImage(option.imageKey) ? option.imageKey : "/images/placeholder.jpg"}
+                            alt=""
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : null}
+                      <span
+                        className={`block p-4 text-base font-medium ${
+                          selections[currentConfiguratorStep.id] === option.value ? "text-primary" : "text-foreground"
+                        }`}
+                      >
+                        {option.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          ) : null}
 
-          {isDiscountStep && (
+          {isDiscountStep ? (
             <div>
               <h3 className="font-serif text-2xl font-bold text-foreground">{content.discountTitle}</h3>
               <p className="mt-1 text-muted-foreground">{content.discountDescription}</p>
@@ -213,9 +273,9 @@ export function ConfiguratorSection({
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
 
-          {isContactStep && (
+          {isContactStep ? (
             <div>
               <h3 className="font-serif text-2xl font-bold text-foreground">{content.contactTitle}</h3>
               <p className="mt-1 text-muted-foreground">{content.contactDescription}</p>
@@ -279,7 +339,7 @@ export function ConfiguratorSection({
                 </label>
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="mt-8 flex items-center justify-between">
             <button

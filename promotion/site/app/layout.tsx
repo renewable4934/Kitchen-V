@@ -1,12 +1,17 @@
 import type { Metadata } from "next"
-import { Inter, Playfair_Display } from "next/font/google"
+import { Inter, Marck_Script, Playfair_Display } from "next/font/google"
 
 import { loadSiteContent } from "@/lib/cms"
 
 import "./globals.css"
 
-const _inter = Inter({ subsets: ["latin", "cyrillic"] })
-const _playfair = Playfair_Display({ subsets: ["latin", "cyrillic"] })
+const _inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" })
+const _playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" })
+const _marck = Marck_Script({
+  subsets: ["latin", "cyrillic"],
+  weight: "400",
+  variable: "--font-marck",
+})
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await loadSiteContent()
@@ -24,7 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className="font-sans antialiased">{children}</body>
+      <body className={`${_inter.variable} ${_playfair.variable} ${_marck.variable} font-sans antialiased`}>
+        {children}
+      </body>
     </html>
   )
 }
