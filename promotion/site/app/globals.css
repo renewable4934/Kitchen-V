@@ -138,19 +138,118 @@
   font-family: "Pegas Quote Italic", serif;
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(1.35rem, 0.95rem + 1.7vw, 2.9rem);
-  line-height: 1.12;
-  letter-spacing: 0.015em;
+  font-size: clamp(1.3rem, 0.95rem + 1vw, 2.15rem);
+  line-height: 1.08;
+  letter-spacing: 0.018em;
   font-synthesis: none;
   font-synthesis-style: none;
   font-synthesis-weight: none;
   font-feature-settings: "kern" 1;
   font-kerning: normal;
   text-rendering: optimizeLegibility;
+  width: 100%;
+  margin-top: 1rem;
+  text-align: center;
   white-space: normal;
   overflow-wrap: normal;
   word-break: normal;
-  text-wrap: balance;
+  text-wrap: pretty;
+}
+
+.hero-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.hero-heading-group {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-headline {
+  font-family: var(--font-playfair), "Playfair Display", "Georgia", serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: clamp(2.85rem, 3.35vw, 4.45rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+
+.hero-headline-secondary {
+  margin-top: 1.1rem;
+}
+
+.hero-cta-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.65rem;
+}
+
+.hero-media-shell {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.75rem;
+}
+
+.hero-media {
+  position: relative;
+  width: min(100%, 58rem);
+  aspect-ratio: 16 / 10;
+  max-height: 15.5rem;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+@media (min-width: 640px) {
+  .hero-cta-row {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .hero-media {
+    max-height: 16.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-headline-secondary {
+    margin-top: 1.55rem;
+  }
+
+  .hero-cta-row {
+    margin-top: 2.2rem;
+  }
+
+  .hero-media-shell {
+    margin-top: 2rem;
+  }
+
+  .hero-media {
+    width: min(100%, 60rem);
+    aspect-ratio: 2.25 / 1;
+    max-height: 16.75rem;
+  }
+
+  .hero-tagline-quote {
+    margin-top: 1.15rem;
+    white-space: nowrap;
+    text-wrap: nowrap;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-media {
+    max-height: 18rem;
+  }
 }
 
 @layer base {
