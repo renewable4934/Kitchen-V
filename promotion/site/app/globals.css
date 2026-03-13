@@ -117,7 +117,7 @@
 }
 
 .font-hero-accent {
-  font-family: var(--font-marck), cursive;
+  font-family: var(--font-cormorant), 'Cormorant Garamond', 'Georgia', serif;
 }
 
 @layer base {
