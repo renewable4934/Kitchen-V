@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Cormorant_Garamond, Inter, Playfair_Display } from "next/font/google"
+import { Inter, Playfair_Display } from "next/font/google"
 
 import { loadSiteContent } from "@/lib/cms"
 
@@ -7,12 +7,6 @@ import "./globals.css"
 
 const _inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" })
 const _playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" })
-const _cormorant = Cormorant_Garamond({
-  subsets: ["latin", "cyrillic"],
-  weight: "400",
-  style: "italic",
-  variable: "--font-cormorant",
-})
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await loadSiteContent()
@@ -30,7 +24,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={`${_inter.variable} ${_playfair.variable} ${_cormorant.variable} font-sans antialiased`}>
+      <head>
+        <link
+          rel="preload"
+          href="/fonts/cormorant-garamond-italic-400-cyrillic.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/cormorant-garamond-italic-400-latin.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+      </head>
+      <body className={`${_inter.variable} ${_playfair.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

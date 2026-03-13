@@ -49,7 +49,7 @@ export function HeroSection({ content, assets }: HeroSectionProps) {
         </div>
 
         {content.tagline ? (
-          <p className="mx-auto mt-16 w-full max-w-none px-2 text-center font-hero-accent text-[clamp(1.125rem,0.8rem+2.2vw,3.35rem)] font-normal leading-[1.2] tracking-[0.015em] whitespace-nowrap text-foreground md:mt-20 md:px-4">
+          <p className="hero-tagline-quote mx-auto mt-16 w-full max-w-none px-2 text-center text-foreground md:mt-20 md:px-4">
             {content.tagline}
           </p>
         ) : null}
