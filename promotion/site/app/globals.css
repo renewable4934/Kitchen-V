@@ -138,8 +138,8 @@
   font-family: "Pegas Quote Italic", serif;
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(1.125rem, 0.72rem + 2.3vw, 4.1rem);
-  line-height: 1.18;
+  font-size: clamp(1.35rem, 0.95rem + 1.7vw, 2.9rem);
+  line-height: 1.12;
   letter-spacing: 0.015em;
   font-synthesis: none;
   font-synthesis-style: none;
@@ -147,10 +147,10 @@
   font-feature-settings: "kern" 1;
   font-kerning: normal;
   text-rendering: optimizeLegibility;
-  white-space: nowrap;
+  white-space: normal;
   overflow-wrap: normal;
   word-break: normal;
-  text-wrap: nowrap;
+  text-wrap: balance;
 }
 
 @layer base {
