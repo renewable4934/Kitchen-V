@@ -17,58 +17,69 @@ export function HeroSection({ content, assets }: HeroSectionProps) {
   const hasSplitTitle = titleSeparatorIndex !== -1 && secondaryTitle.length > 0
 
   return (
-    <section className="relative flex min-h-screen items-start pt-20 lg:pt-24" id="hero">
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-6 py-8 sm:py-10 lg:py-4 xl:py-6">
+    <section className="hero-section-shell" id="hero">
+      <div className="hero-section-inner">
         <div className="hero-stack">
-          {hasSplitTitle ? (
-            <div className="hero-heading-group">
-              <h1 className="hero-headline hero-headline-primary">{primaryTitle}</h1>
-              <p className="hero-headline hero-headline-secondary">{secondaryTitle}</p>
-              <div className="hero-cta-row">
-                <a
-                  href={content.primaryCta.href}
-                  className="rounded-lg bg-primary px-8 py-3.5 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  {content.primaryCta.label}
-                </a>
-                <a
-                  href={content.secondaryCta.href}
-                  className="rounded-lg border border-border bg-card px-8 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-secondary"
-                >
-                  {content.secondaryCta.label}
-                </a>
+          <div className="hero-layout">
+            {hasSplitTitle ? (
+              <div className="hero-heading-group">
+                <div className="hero-title-stack">
+                  <h1 className="hero-headline-card">
+                    <span className="hero-headline hero-headline-primary">{primaryTitle}</span>
+                  </h1>
+                  <p className="hero-headline-card hero-headline-card-secondary">
+                    <span className="hero-headline hero-headline-secondary">{secondaryTitle}</span>
+                  </p>
+                </div>
+                <div className="hero-cta-row">
+                  <a
+                    href={content.primaryCta.href}
+                    className="hero-cta hero-cta-primary"
+                  >
+                    {content.primaryCta.label}
+                  </a>
+                  <a
+                    href={content.secondaryCta.href}
+                    className="hero-cta hero-cta-secondary"
+                  >
+                    {content.secondaryCta.label}
+                  </a>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="hero-heading-group">
-              <h1 className="hero-headline hero-headline-primary">{content.title}</h1>
-              <div className="hero-cta-row">
-                <a
-                  href={content.primaryCta.href}
-                  className="rounded-lg bg-primary px-8 py-3.5 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  {content.primaryCta.label}
-                </a>
-                <a
-                  href={content.secondaryCta.href}
-                  className="rounded-lg border border-border bg-card px-8 py-3.5 text-base font-medium text-foreground transition-colors hover:bg-secondary"
-                >
-                  {content.secondaryCta.label}
-                </a>
+            ) : (
+              <div className="hero-heading-group">
+                <div className="hero-title-stack">
+                  <h1 className="hero-headline-card">
+                    <span className="hero-headline hero-headline-primary">{content.title}</span>
+                  </h1>
+                </div>
+                <div className="hero-cta-row">
+                  <a
+                    href={content.primaryCta.href}
+                    className="hero-cta hero-cta-primary"
+                  >
+                    {content.primaryCta.label}
+                  </a>
+                  <a
+                    href={content.secondaryCta.href}
+                    className="hero-cta hero-cta-secondary"
+                  >
+                    {content.secondaryCta.label}
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
-
-          <div className="hero-media-shell">
-            <div className="hero-media">
-              <Image
-                src={heroImage?.publicUrl || "/images/hero-kitchen.jpg"}
-                alt={heroImage?.alt || "Современная кухня от Пегас"}
-                fill
-                sizes="(min-width: 1024px) 960px, 100vw"
-                className="object-cover"
-                priority
-              />
+            )}
+            <div className="hero-media-shell">
+              <div className="hero-media">
+                <Image
+                  src={heroImage?.publicUrl || "/images/hero-kitchen.jpg"}
+                  alt={heroImage?.alt || "Современная кухня от Пегас"}
+                  fill
+                  sizes="(min-width: 1024px) 960px, 100vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </div>
