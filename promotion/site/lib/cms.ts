@@ -94,8 +94,31 @@ function normalizeDiscountOptions(
   })
 }
 
+function normalizeSiteSettings(site: SiteContent["site"], fallbackSite: SiteContent["site"]) {
+  const normalized = { ...site }
+
+  if (!normalized.contactPhone || normalized.contactPhone === "+7 (800) 000-00-00") {
+    normalized.contactPhone = fallbackSite.contactPhone
+  }
+
+  if (!normalized.email || normalized.email === "info@pegas-kitchen.ru") {
+    normalized.email = fallbackSite.email
+  }
+
+  if (!normalized.address || normalized.address === "Москва, Россия") {
+    normalized.address = fallbackSite.address
+  }
+
+  if (!normalized.footerCopyrightOwner) {
+    normalized.footerCopyrightOwner = fallbackSite.footerCopyrightOwner
+  }
+
+  return normalized
+}
+
 function normalizeContent(merged: SiteContent) {
   const canonical = cloneFallback()
+  merged.site = normalizeSiteSettings(merged.site, canonical.site)
 
   merged.navigation.headerLinks = canonical.navigation.headerLinks
   merged.navigation.footerLinks = canonical.navigation.footerLinks

@@ -1,7 +1,7 @@
 # Title: Kitchen_V Project Index
 **Purpose:** Человеческая карта проекта: где лежат материалы, зачем они нужны и что делать дальше.  
 **Owner:** Вы (основной пользователь), команда проекта (исполнители).  
-**Last updated:** 2026-03-11
+**Last updated:** 2026-03-14
 
 ## Project status
 1. Структура проекта приведена к единым сущностям: promotion, analytics, sales, crm, account-management, project-management, archive.
@@ -122,9 +122,33 @@
 - **Purpose (RU):** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.
 - **Trigger:** Перенос всех материалов сайта в единую папку сайта.
 - **Owner:** Вы / команда.
-- **Last updated:** 2026-03-11
+- **Last updated:** 2026-03-14
 - **Lifecycle:** Active
-- **Next step:** Подключить staging/prod GitHub environments, deploy-user и серверные конфиги на Aeza.
+- **Next step:** Подать сайт на пересмотр браузерной репутации после выкладки реальных контактов, `/privacy`, `robots.txt` и `sitemap.xml`.
+
+### Entry
+- **Path:** `promotion/site/app/privacy/page.tsx`
+- **Purpose (RU):** Реальная страница политики конфиденциальности для сайта, чтобы пользователь и браузер видели условия обработки данных.
+- **Trigger:** На новом домене отсутствовала живая страница `/privacy`, а это ухудшало сигналы доверия.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-14
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/app/robots.ts`
+- **Purpose (RU):** Отдаёт `robots.txt` для индексации сайта и базовых технических сигналов доверия.
+- **Trigger:** На live `robots.txt` отдавал `404`.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-14
+- **Lifecycle:** Active
+
+### Entry
+- **Path:** `promotion/site/app/sitemap.ts`
+- **Purpose (RU):** Отдаёт `sitemap.xml` с основными URL сайта.
+- **Trigger:** На live `sitemap.xml` отдавал `404`.
+- **Owner:** Вы / команда.
+- **Last updated:** 2026-03-14
+- **Lifecycle:** Active
 
 ### Entry
 - **Path:** `promotion/site/README.md`

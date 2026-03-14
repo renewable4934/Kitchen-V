@@ -5,6 +5,8 @@ import { loadSiteContent } from "@/lib/cms"
 
 import "./globals.css"
 
+const siteUrl = "https://zakazpegas.ru"
+
 const _inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" })
 const _playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" })
 
@@ -12,8 +14,28 @@ export async function generateMetadata(): Promise<Metadata> {
   const content = await loadSiteContent()
 
   return {
+    metadataBase: new URL(siteUrl),
     title: content.page.title,
     description: content.page.description,
+    alternates: {
+      canonical: "/",
+    },
+    openGraph: {
+      type: "website",
+      url: siteUrl,
+      title: content.page.title,
+      description: content.page.description,
+      siteName: content.site.brandName,
+      locale: "ru_RU",
+      images: [
+        {
+          url: "/images/hero-kitchen.jpg",
+          width: 1600,
+          height: 1067,
+          alt: "Современная кухня от Пегас",
+        },
+      ],
+    },
   }
 }
 

@@ -109,7 +109,9 @@ export function Footer({
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-xs text-muted-foreground">{`© ${new Date().getFullYear()} ${copyrightOwner}. Все права защищены.`}</p>
-          <p className="text-xs text-muted-foreground">{privacyLabel}</p>
+          <a href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+            {privacyLabel}
+          </a>
         </div>
       </div>
     </footer>
