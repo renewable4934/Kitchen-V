@@ -146,7 +146,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1rem;
+  gap: 1.15rem;
   width: 100%;
   max-width: 80rem;
   padding: 1.25rem 1.5rem 1.5rem;
@@ -179,7 +179,7 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 1.6rem;
+  gap: 1.9rem;
 }
 
 .hero-headline-card {
@@ -315,6 +315,7 @@
 
   .hero-section-inner {
     min-height: calc(100svh - 5rem);
+    gap: 1.45rem;
     padding: 1rem 2rem 1.25rem;
   }
 
@@ -323,8 +324,8 @@
   }
 
   .hero-layout {
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-    gap: 2.2rem;
+    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+    gap: 2.1rem;
     align-items: center;
   }
 
@@ -334,17 +335,22 @@
 
   .hero-title-stack {
     align-items: flex-start;
-    gap: 2.75rem;
+    gap: 2.9rem;
   }
 
   .hero-headline-card {
-    width: min(100%, 28rem);
+    width: fit-content;
+    max-width: 100%;
     justify-content: flex-start;
   }
 
   .hero-headline {
     font-size: clamp(3rem, 3.95vw, 4.3rem);
     text-align: left;
+  }
+
+  .hero-headline-primary {
+    white-space: nowrap;
   }
 
   .hero-cta-row {
@@ -355,7 +361,7 @@
 
   .hero-heading-group {
     align-items: flex-start;
-    gap: 3.05rem;
+    gap: 2.9rem;
   }
 
   .hero-cta {
@@ -369,7 +375,7 @@
   }
 
   .hero-media {
-    width: min(100%, 44rem);
+    width: min(100%, 42.75rem);
     aspect-ratio: 1.02 / 1;
   }
 
@@ -386,7 +392,7 @@
   }
 
   .hero-media {
-    width: min(100%, 46.5rem);
+    width: min(100%, 45.25rem);
   }
 }
 
