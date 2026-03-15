@@ -186,6 +186,7 @@
   display: flex;
   width: min(100%, 27rem);
   justify-content: center;
+  margin: 0;
   padding: 0;
 }
 
@@ -275,7 +276,7 @@
   font-weight: 400;
   font-size: clamp(1.85rem, 4.2vw, 3rem);
   line-height: 1.06;
-  letter-spacing: 0.016em;
+  letter-spacing: 0.02em;
   font-synthesis: none;
   font-synthesis-style: none;
   font-synthesis-weight: none;
@@ -315,7 +316,7 @@
 
   .hero-section-inner {
     min-height: calc(100svh - 5rem);
-    gap: 1.45rem;
+    gap: 2.05rem;
     padding: 1rem 2rem 1.25rem;
   }
 
@@ -325,17 +326,18 @@
 
   .hero-layout {
     grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
-    gap: 2.1rem;
+    gap: 1.25rem;
     align-items: center;
   }
 
   .hero-heading-group {
     align-items: flex-start;
+    gap: 0;
   }
 
   .hero-title-stack {
     align-items: flex-start;
-    gap: 2.9rem;
+    gap: 2.45rem;
   }
 
   .hero-headline-card {
@@ -356,18 +358,24 @@
   .hero-cta-row {
     width: min(100%, 28rem);
     justify-content: flex-start;
-    gap: 0.9rem;
-  }
-
-  .hero-heading-group {
-    align-items: flex-start;
-    gap: 2.9rem;
+    gap: 0.65rem;
+    margin-top: 3.05rem;
   }
 
   .hero-cta {
     min-width: 0;
     flex: 1 1 0;
     white-space: nowrap;
+  }
+
+  .hero-cta-primary {
+    padding-left: 1.5rem;
+    padding-right: 1.75rem;
+  }
+
+  .hero-cta-secondary {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 
   .hero-media-shell {
@@ -388,7 +396,7 @@
 
 @media (min-width: 1280px) {
   .hero-layout {
-    gap: 2.5rem;
+    gap: 1.65rem;
   }
 
   .hero-media {
