@@ -241,7 +241,7 @@ export const fallbackSiteContent: SiteContent = {
     configurator: {
       eyebrow: "3D-проект для Вас",
       title: "Созидание замыслов",
-      description: "Благодаря Вашим ответам мы сможем подготовить индивидуальный 3D проект",
+      description: "Благодаря Вашим ответам мы сможем подготовить индивидуальный 3D-проект",
       steps: [
         {
           id: "style",
@@ -550,7 +550,7 @@ export const fallbackSiteContent: SiteContent = {
         },
         {
           imageKey: "lifestyle-cooking",
-          title: "Совместная готовка",
+          title: "Совместная кулинария",
           description: "Кухня как место встреч",
         },
         {
@@ -562,7 +562,7 @@ export const fallbackSiteContent: SiteContent = {
           imageKey: "lifestyle-creative",
           title: "Творчество",
           description:
-            "Ваша кухня — лаборатория для кулинарных экспериментов и новых идей",
+            "Ваша кухня — лаборатория для гастрономических экспериментов и новых идей",
         },
       ],
     },
