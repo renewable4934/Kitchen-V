@@ -551,7 +551,7 @@ export const fallbackSiteContent: SiteContent = {
         {
           imageKey: "lifestyle-cooking",
           title: "Совместная кулинария",
-          description: "Кухня как место встреч",
+          description: "Кухня как место встреч — где рождаются вкусы и укрепляются отношения",
         },
         {
           imageKey: "lifestyle-family",
