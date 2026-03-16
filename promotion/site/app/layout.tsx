@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
+import Script from "next/script"
 
 import { loadSiteContent } from "@/lib/cms"
 
@@ -47,6 +48,29 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        <Script id="initial-scroll-guard" strategy="beforeInteractive">
+          {`
+            try {
+              if ("scrollRestoration" in window.history) {
+                window.history.scrollRestoration = "manual";
+              }
+
+              if (window.location.hash) {
+                window.history.replaceState(null, "", window.location.pathname + window.location.search);
+              }
+
+              const resetScroll = () => window.scrollTo(0, 0);
+              resetScroll();
+              window.addEventListener("DOMContentLoaded", resetScroll, { once: true });
+              window.addEventListener("load", resetScroll, { once: true });
+              window.requestAnimationFrame(resetScroll);
+              window.setTimeout(resetScroll, 0);
+              window.setTimeout(resetScroll, 300);
+            } catch (error) {
+              console.error(error);
+            }
+          `}
+        </Script>
         <link
           rel="preload"
           href="/fonts/cormorant-garamond-italic-400-cyrillic.woff2"
