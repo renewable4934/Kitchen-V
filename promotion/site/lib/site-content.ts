@@ -546,12 +546,12 @@ export const fallbackSiteContent: SiteContent = {
         {
           imageKey: "lifestyle-coffee",
           title: "Утренняя бодрость",
-          description: "Начните день с идеальной чашки кофе в пространстве, созданном для вдохновения",
+          description: "Начало дня с идеальной чашкой кофе в пространстве, созданном для вдохновения",
         },
         {
           imageKey: "lifestyle-cooking",
           title: "Совместная кулинария",
-          description: "Кухня как место встреч — где рождаются вкусы и укрепляются отношения",
+          description: "Атмосфера, в которой рождаются вкусы и укрепляются отношения",
         },
         {
           imageKey: "lifestyle-family",
@@ -561,8 +561,7 @@ export const fallbackSiteContent: SiteContent = {
         {
           imageKey: "lifestyle-creative",
           title: "Творчество",
-          description:
-            "Ваша кухня — лаборатория для гастрономических экспериментов и новых идей",
+          description: "Лаборатория для гастрономических экспериментов и новых идей",
         },
       ],
     },
