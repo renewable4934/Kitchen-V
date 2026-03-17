@@ -42,7 +42,7 @@ export function ContractSection({ content }: ContractSectionProps) {
                   <h3 className="text-pretty text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-[1.8rem] lg:text-[1.85rem] lg:leading-[1.08]">
                     {card.title}
                   </h3>
-                  <p className="mt-3 text-pretty font-serif text-[1.85rem] font-bold leading-[0.98] text-primary sm:text-[2.05rem] lg:mt-3.5 lg:text-[2.35rem]">
+                  <p className="mt-3 text-pretty font-serif text-[1.65rem] font-bold leading-[1] text-primary sm:text-[1.8rem] lg:mt-3.5 lg:text-[2.05rem]">
                     {card.highlight}
                   </p>
                   <p className="mt-3 max-w-[30ch] text-[0.94rem] leading-[1.58] text-muted-foreground sm:text-[0.98rem] lg:mt-3.5 lg:max-w-[32ch]">
