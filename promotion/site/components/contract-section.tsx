@@ -18,7 +18,7 @@ export function ContractSection({ content }: ContractSectionProps) {
 
   return (
     <section className="relative overflow-hidden bg-background py-16 lg:min-h-screen lg:py-12" id="contract">
-      <div className="mx-auto flex max-w-7xl flex-col justify-center gap-10 px-6 lg:min-h-screen lg:gap-12">
+      <div className="mx-auto flex max-w-7xl flex-col justify-center gap-8 px-6 lg:min-h-screen lg:gap-10">
         <div className="max-w-2xl">
           <h2 className="font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             {content.title}
@@ -26,21 +26,30 @@ export function ContractSection({ content }: ContractSectionProps) {
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{content.description}</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2 xl:gap-6">
           {cards.map((card) => {
             const Icon = icons[card.icon] || Wrench
             return (
-              <div key={card.title} className="flex flex-col gap-4">
-                <h3 className="font-serif text-2xl font-bold tracking-tight text-foreground lg:text-[1.7rem] text-balance">
-                  {card.title}
-                </h3>
-                <div className="group flex h-full flex-col rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-lg">
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <p className="font-serif text-2xl font-bold text-primary">{card.highlight}</p>
+              <article
+                key={card.title}
+                className="group flex h-full gap-4 rounded-[1.75rem] border border-border/80 bg-card px-5 py-5 shadow-sm transition-all hover:border-primary/30 hover:shadow-lg sm:px-6 sm:py-6 lg:min-h-[15.5rem] lg:gap-5 lg:px-7 lg:py-6"
+              >
+                <div className="flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-[1.3rem] border border-border/70 bg-background shadow-sm sm:h-[4.5rem] sm:w-[4.5rem]">
+                  <Icon className="h-7 w-7 text-primary sm:h-8 sm:w-8" />
                 </div>
-              </div>
+
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <h3 className="text-pretty text-[1.9rem] font-semibold tracking-tight text-foreground sm:text-[2rem] lg:text-[2.05rem] lg:leading-[1.05]">
+                    {card.title}
+                  </h3>
+                  <p className="mt-3 text-pretty font-serif text-[2rem] font-bold leading-[0.95] text-primary sm:text-[2.3rem] lg:mt-4 lg:text-[2.7rem]">
+                    {card.highlight}
+                  </p>
+                  <p className="mt-3 max-w-[28ch] text-[0.98rem] leading-relaxed text-muted-foreground sm:text-base lg:mt-4 lg:max-w-[30ch]">
+                    {card.description}
+                  </p>
+                </div>
+              </article>
             )
           })}
         </div>
