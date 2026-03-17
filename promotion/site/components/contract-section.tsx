@@ -29,6 +29,7 @@ export function ContractSection({ content }: ContractSectionProps) {
         <div className="grid gap-6 md:grid-cols-2 xl:gap-7">
           {cards.map((card) => {
             const Icon = icons[card.icon] || Wrench
+            const hasHighlight = Boolean(card.highlight?.trim())
             return (
               <article
                 key={card.title}
@@ -39,13 +40,19 @@ export function ContractSection({ content }: ContractSectionProps) {
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <h3 className="text-pretty text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-[1.8rem] lg:text-[1.85rem] lg:leading-[1.08]">
+                  <h3 className="text-pretty text-[1.5rem] font-semibold tracking-tight text-foreground sm:text-[1.65rem] lg:text-[1.72rem] lg:leading-[1.1]">
                     {card.title}
                   </h3>
-                  <p className="mt-3 text-pretty font-serif text-[1.65rem] font-bold leading-[1] text-primary sm:text-[1.8rem] lg:mt-3.5 lg:text-[2.05rem]">
-                    {card.highlight}
-                  </p>
-                  <p className="mt-3 max-w-[30ch] text-[0.94rem] leading-[1.58] text-muted-foreground sm:text-[0.98rem] lg:mt-3.5 lg:max-w-[32ch]">
+                  {hasHighlight ? (
+                    <p className="mt-3 text-pretty font-serif text-[1.65rem] font-bold leading-[1] text-primary sm:text-[1.8rem] lg:mt-3.5 lg:text-[2.05rem]">
+                      {card.highlight}
+                    </p>
+                  ) : null}
+                  <p
+                    className={`max-w-[30ch] text-[0.94rem] leading-[1.58] text-muted-foreground sm:text-[0.98rem] lg:max-w-[32ch] ${
+                      hasHighlight ? "mt-3 lg:mt-3.5" : "mt-3.5 lg:mt-4"
+                    }`}
+                  >
                     {card.description}
                   </p>
                 </div>
