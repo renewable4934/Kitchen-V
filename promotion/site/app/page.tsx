@@ -5,7 +5,6 @@ import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { LifestyleSection } from "@/components/lifestyle-section"
 import { PortfolioSection } from "@/components/portfolio-section"
-import { SiteAnalytics } from "@/components/site-analytics"
 import { loadSiteContent } from "@/lib/cms"
 
 export const dynamic = "force-dynamic"
@@ -15,11 +14,6 @@ export default async function Home() {
 
   return (
     <>
-      <SiteAnalytics
-        funnelType="kitchen"
-        offerVariant={content.site.offerVariant}
-        experimentKey={content.site.experimentKey}
-      />
       <Header
         brandName={content.site.brandName}
         links={content.navigation.headerLinks}
@@ -28,7 +22,12 @@ export default async function Home() {
         experimentKey={content.site.experimentKey}
       />
       <main>
-        <HeroSection content={content.sections.hero} assets={content.assets} />
+        <HeroSection
+          content={content.sections.hero}
+          assets={content.assets}
+          offerVariant={content.site.offerVariant}
+          experimentKey={content.site.experimentKey}
+        />
         <ConfiguratorSection
           content={content.sections.configurator}
           offerVariant={content.site.offerVariant}

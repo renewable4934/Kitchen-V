@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 
-import { trackSiteEvent } from "@/lib/tracking"
+import { trackCTA, trackPhoneClick } from "@/lib/tracking"
 import type { NavLink } from "@/lib/site-content"
 
 type FooterProps = {
@@ -38,6 +38,7 @@ export function Footer({
   offerVariant,
   experimentKey,
 }: FooterProps) {
+  const safeLinks = Array.isArray(links) ? links : []
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`
   const whatsappHref =
     whatsappPhone && whatsappPhone.trim()
@@ -57,7 +58,7 @@ export function Footer({
             <div>
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">{navigationTitle}</p>
               <nav className="flex flex-col gap-2">
-                {links.map((link) => (
+                {safeLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
@@ -75,10 +76,11 @@ export function Footer({
                 <a
                   href={phoneHref}
                   onClick={() =>
-                    void trackSiteEvent("click_call", {
-                      funnel_type: "kitchen",
-                      offer_variant: offerVariant,
-                      experiment_key: experimentKey,
+                    void trackPhoneClick({
+                      sectionName: "footer",
+                      funnelType: "kitchen",
+                      offerVariant,
+                      experimentKey,
                     })
                   }
                 >
@@ -92,10 +94,12 @@ export function Footer({
                     target="_blank"
                     rel="noreferrer"
                     onClick={() =>
-                      void trackSiteEvent("open_whatsapp", {
-                        funnel_type: "kitchen",
-                        offer_variant: offerVariant,
-                        experiment_key: experimentKey,
+                      void trackCTA({
+                        buttonName: "WhatsApp",
+                        sectionName: "footer",
+                        funnelType: "kitchen",
+                        offerVariant,
+                        experimentKey,
                       })
                     }
                   >

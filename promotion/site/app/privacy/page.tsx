@@ -49,7 +49,14 @@ export default async function PrivacyPage() {
             <h2 className="font-serif text-2xl font-bold text-foreground">4. Контакты для запроса</h2>
             <div className="mt-2 flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
               <p>{content.site.footerCopyrightOwner}</p>
-              <a className="transition-colors hover:text-foreground" href={phoneHref}>
+              <a
+                className="transition-colors hover:text-foreground"
+                href={phoneHref}
+                data-analytics-event="phone_click"
+                data-analytics-button-name="phone_primary"
+                data-analytics-section-name="privacy"
+                data-analytics-funnel-type="kitchen"
+              >
                 {content.site.contactPhone}
               </a>
               <a className="transition-colors hover:text-foreground" href={`mailto:${content.site.email}`}>

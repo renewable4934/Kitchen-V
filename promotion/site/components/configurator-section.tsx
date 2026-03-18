@@ -1,11 +1,11 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 
 import type { ConfiguratorContent, DiscountOption } from "@/lib/site-content"
-import { getTrackingContext, trackSiteEvent } from "@/lib/tracking"
+import { getTrackingContext, trackFormStart, trackFormSubmit, trackLead } from "@/lib/tracking"
 
 type ConfiguratorSectionProps = {
   content: ConfiguratorContent
@@ -41,6 +41,8 @@ export function ConfiguratorSection({
   offerVariant,
   experimentKey,
 }: ConfiguratorSectionProps) {
+  const steps = Array.isArray(content.steps) ? content.steps : []
+  const discountOptions = Array.isArray(content.discountOptions) ? content.discountOptions : []
   const [currentStep, setCurrentStep] = useState(0)
   const [selections, setSelections] = useState<Record<string, string>>({})
   const [selectedDiscounts, setSelectedDiscounts] = useState<string[]>([])
@@ -53,19 +55,39 @@ export function ConfiguratorSection({
   })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const hasTrackedFormStartRef = useRef(false)
 
-  const totalSteps = content.steps.length + 2
-  const isDiscountStep = currentStep === content.steps.length
-  const isContactStep = currentStep === content.steps.length + 1
+  const totalSteps = steps.length + 2
+  const isDiscountStep = currentStep === steps.length
+  const isContactStep = currentStep === steps.length + 1
   const progress = ((currentStep + 1) / totalSteps) * 100
-  const currentConfiguratorStep = content.steps[currentStep]
+  const currentConfiguratorStep = steps[currentStep]
   const isNumberStep = currentConfiguratorStep?.kind === "number"
 
+  const markFormStarted = () => {
+    if (hasTrackedFormStartRef.current) {
+      return
+    }
+
+    hasTrackedFormStartRef.current = true
+
+    void trackFormStart({
+      formName: "configurator",
+      sectionName: "configurator",
+      stepNumber: currentStep + 1,
+      funnelType: "kitchen",
+      offerVariant,
+      experimentKey,
+    })
+  }
+
   const handleSelect = (stepId: string, value: string) => {
+    markFormStarted()
     setSelections((prev) => ({ ...prev, [stepId]: value }))
   }
 
   const toggleDiscount = (value: string) => {
+    markFormStarted()
     setSelectedDiscounts((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]))
   }
 
@@ -83,16 +105,7 @@ export function ConfiguratorSection({
   }
 
   const handleNext = () => {
-    if (currentStep === 0) {
-      void trackSiteEvent("start_quiz", {
-        funnel_type: "kitchen",
-        offer_variant: offerVariant,
-        experiment_key: experimentKey,
-        metadata: {
-          placement: "configurator",
-        },
-      })
-    }
+    markFormStarted()
     setCurrentStep((step) => Math.min(totalSteps - 1, step + 1))
   }
 
@@ -109,7 +122,7 @@ export function ConfiguratorSection({
       prefer_messenger: contactInfo.messenger,
       quiz_answers: {
         selections,
-        discounts: buildDiscountPayload(selectedDiscounts, content.discountOptions),
+        discounts: buildDiscountPayload(selectedDiscounts, discountOptions),
       },
       offer_variant: offerVariant,
       experiment_key: experimentKey,
@@ -127,14 +140,23 @@ export function ConfiguratorSection({
         throw new Error(`Lead submit failed: ${response.status}`)
       }
 
-      await trackSiteEvent("submit_lead", {
-        funnel_type: "kitchen",
-        offer_variant: offerVariant,
-        experiment_key: experimentKey,
-        metadata: {
-          placement: "configurator",
-          discounts: buildDiscountPayload(selectedDiscounts, content.discountOptions),
-        },
+      void trackFormSubmit({
+        formName: "configurator",
+        sectionName: "configurator",
+        stepNumber: totalSteps,
+        success: true,
+        funnelType: "kitchen",
+        offerVariant,
+        experimentKey,
+      })
+
+      void trackLead({
+        formName: "configurator",
+        sectionName: "configurator",
+        success: true,
+        funnelType: "kitchen",
+        offerVariant,
+        experimentKey,
       })
 
       setSubmitted(true)
@@ -249,7 +271,7 @@ export function ConfiguratorSection({
               <h3 className="font-serif text-2xl font-bold text-foreground">{content.discountTitle}</h3>
               <p className="mt-1 text-muted-foreground">{content.discountDescription}</p>
               <div className="mt-6 flex flex-col gap-3">
-                {content.discountOptions.map((option) => (
+                {discountOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => toggleDiscount(option.value)}

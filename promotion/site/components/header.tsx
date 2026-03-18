@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { Menu, X } from "lucide-react"
 
 import type { ActionLink, NavLink } from "@/lib/site-content"
-import { trackSiteEvent } from "@/lib/tracking"
+import { trackCTA } from "@/lib/tracking"
 
 type HeaderProps = {
   brandName: string
@@ -42,14 +42,14 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
     }
   }, [])
 
-  const handleQuizStart = () => {
-    void trackSiteEvent("start_quiz", {
-      funnel_type: "kitchen",
-      offer_variant: offerVariant,
-      experiment_key: experimentKey,
-      metadata: {
-        placement: "header",
-      },
+  const handleHeaderCtaClick = () => {
+    void trackCTA({
+      buttonName: ctaLabel || "header_cta",
+      sectionName: "header",
+      destination: ctaHref,
+      funnelType: "kitchen",
+      offerVariant,
+      experimentKey,
     })
   }
 
@@ -74,7 +74,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
 
         <a
           href={ctaHref}
-          onClick={handleQuizStart}
+          onClick={handleHeaderCtaClick}
           className="hidden rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex"
         >
           {ctaLabel}
@@ -105,7 +105,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
             <a
               href={ctaHref}
               onClick={() => {
-                handleQuizStart()
+                handleHeaderCtaClick()
                 setMobileOpen(false)
               }}
               className="mt-2 rounded-lg bg-primary px-5 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

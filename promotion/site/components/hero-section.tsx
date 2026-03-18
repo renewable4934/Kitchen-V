@@ -5,9 +5,11 @@ import type { CmsAsset, HeroContent } from "@/lib/site-content"
 type HeroSectionProps = {
   content: HeroContent
   assets: Record<string, CmsAsset>
+  offerVariant: string | null
+  experimentKey: string | null
 }
 
-export function HeroSection({ content, assets }: HeroSectionProps) {
+export function HeroSection({ content, assets, offerVariant, experimentKey }: HeroSectionProps) {
   const heroImage = assets[content.imageKey]
   const titleSeparatorIndex = content.title.indexOf("\n")
   const primaryTitle =
@@ -34,12 +36,26 @@ export function HeroSection({ content, assets }: HeroSectionProps) {
                 <div className="hero-cta-row">
                   <a
                     href={content.primaryCta.href}
+                    data-analytics-event="cta_click"
+                    data-analytics-button-name={content.primaryCta.label}
+                    data-analytics-section-name="hero"
+                    data-analytics-destination={content.primaryCta.href}
+                    data-analytics-funnel-type="kitchen"
+                    data-analytics-offer-variant={offerVariant || ""}
+                    data-analytics-experiment-key={experimentKey || ""}
                     className="hero-cta hero-cta-primary"
                   >
                     {content.primaryCta.label}
                   </a>
                   <a
                     href={content.secondaryCta.href}
+                    data-analytics-event="cta_click"
+                    data-analytics-button-name={content.secondaryCta.label}
+                    data-analytics-section-name="hero"
+                    data-analytics-destination={content.secondaryCta.href}
+                    data-analytics-funnel-type="kitchen"
+                    data-analytics-offer-variant={offerVariant || ""}
+                    data-analytics-experiment-key={experimentKey || ""}
                     className="hero-cta hero-cta-secondary"
                   >
                     {content.secondaryCta.label}
@@ -56,12 +72,26 @@ export function HeroSection({ content, assets }: HeroSectionProps) {
                 <div className="hero-cta-row">
                   <a
                     href={content.primaryCta.href}
+                    data-analytics-event="cta_click"
+                    data-analytics-button-name={content.primaryCta.label}
+                    data-analytics-section-name="hero"
+                    data-analytics-destination={content.primaryCta.href}
+                    data-analytics-funnel-type="kitchen"
+                    data-analytics-offer-variant={offerVariant || ""}
+                    data-analytics-experiment-key={experimentKey || ""}
                     className="hero-cta hero-cta-primary"
                   >
                     {content.primaryCta.label}
                   </a>
                   <a
                     href={content.secondaryCta.href}
+                    data-analytics-event="cta_click"
+                    data-analytics-button-name={content.secondaryCta.label}
+                    data-analytics-section-name="hero"
+                    data-analytics-destination={content.secondaryCta.href}
+                    data-analytics-funnel-type="kitchen"
+                    data-analytics-offer-variant={offerVariant || ""}
+                    data-analytics-experiment-key={experimentKey || ""}
                     className="hero-cta hero-cta-secondary"
                   >
                     {content.secondaryCta.label}

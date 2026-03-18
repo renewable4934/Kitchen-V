@@ -8,7 +8,20 @@ import {
 } from "@/lib/supabase"
 
 const allowedFunnels = new Set(["kitchen", "wardrobe"])
-const allowedEvents = new Set(["view_offer", "click_call", "start_quiz", "submit_lead", "open_whatsapp"])
+const allowedEvents = new Set([
+  "view_offer",
+  "page_view",
+  "cta_click",
+  "click_call",
+  "phone_click",
+  "start_quiz",
+  "form_start",
+  "submit_lead",
+  "form_submit",
+  "lead",
+  "open_whatsapp",
+  "whatsapp_click",
+])
 
 function cleanString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
