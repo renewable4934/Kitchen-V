@@ -54,47 +54,66 @@ export function Footer({
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-6 py-14 sm:py-16 lg:px-8">
-        <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between lg:gap-20 xl:gap-28">
-          <div className="flex-1">
-            <div className="flex max-w-[21rem] flex-col items-start gap-5 sm:gap-6">
-              <Image
-                src="/images/pegas-logo.png"
-                alt=""
-                width={667}
-                height={374}
-                className="h-auto w-[12rem] sm:w-[13.5rem] lg:w-[15rem]"
-              />
-              <p
-                className={`${footerPhraseFont.className} max-w-[10ch] text-[2.25rem] leading-[1.12] tracking-[0.01em] text-foreground sm:text-[2.6rem] md:text-[2.85rem] lg:text-[3rem]`}
-              >
-                Свобода полёта мечты
-              </p>
-            </div>
+        <div className="grid gap-8 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-10 xl:grid-cols-[auto_auto_minmax(9rem,0.7fr)_minmax(15rem,0.95fr)] xl:items-start xl:gap-x-16">
+          <div className="flex items-center">
+            <Image
+              src="/images/pegas-logo.png"
+              alt=""
+              width={667}
+              height={374}
+              className="h-auto w-[8.75rem] sm:w-[9.5rem] lg:w-[10.25rem]"
+            />
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 sm:gap-12 lg:flex-none lg:gap-16 xl:gap-20">
-            <div>
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">{navigationTitle}</p>
-              <nav className="flex flex-col gap-2">
-                {safeLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </nav>
-            </div>
+          <div className="flex items-center sm:max-w-[18rem] xl:min-h-[7rem] xl:max-w-none">
+            <p
+              className={`${footerPhraseFont.className} text-[2.25rem] leading-[1.1] tracking-[0.01em] text-foreground sm:text-[2.45rem] lg:text-[2.6rem] xl:text-[2.8rem] xl:whitespace-nowrap`}
+            >
+              Свобода полёта мечты
+            </p>
+          </div>
 
-            <div>
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">{contactsTitle}</p>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+          <div>
+            <p className="mb-3 text-base font-semibold text-foreground">{navigationTitle}</p>
+            <nav className="flex flex-col gap-2">
+              {safeLinks.map((link) => (
                 <a
-                  href={phoneHref}
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <div>
+            <p className="mb-3 text-base font-semibold text-foreground">{contactsTitle}</p>
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <a
+                href={phoneHref}
+                onClick={() =>
+                  void trackPhoneClick({
+                    sectionName: "footer",
+                    funnelType: "kitchen",
+                    offerVariant,
+                    experimentKey,
+                  })
+                }
+              >
+                {phone}
+              </a>
+              <a href={`mailto:${email}`}>{email}</a>
+              <p>{address}</p>
+              {whatsappHref ? (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
                   onClick={() =>
-                    void trackPhoneClick({
+                    void trackCTA({
+                      buttonName: "WhatsApp",
                       sectionName: "footer",
                       funnelType: "kitchen",
                       offerVariant,
@@ -102,29 +121,9 @@ export function Footer({
                     })
                   }
                 >
-                  {phone}
+                  WhatsApp
                 </a>
-                <a href={`mailto:${email}`}>{email}</a>
-                <p>{address}</p>
-                {whatsappHref ? (
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() =>
-                      void trackCTA({
-                        buttonName: "WhatsApp",
-                        sectionName: "footer",
-                        funnelType: "kitchen",
-                        offerVariant,
-                        experimentKey,
-                      })
-                    }
-                  >
-                    WhatsApp
-                  </a>
-                ) : null}
-              </div>
+              ) : null}
             </div>
           </div>
         </div>
