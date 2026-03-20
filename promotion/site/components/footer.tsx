@@ -1,9 +1,15 @@
 "use client"
 
 import Image from "next/image"
+import { Cormorant_Garamond } from "next/font/google"
 
 import { trackCTA, trackPhoneClick } from "@/lib/tracking"
 import type { NavLink } from "@/lib/site-content"
+
+const footerPhraseFont = Cormorant_Garamond({
+  subsets: ["latin", "cyrillic"],
+  weight: "600",
+})
 
 type FooterProps = {
   brandName: string
@@ -47,14 +53,26 @@ export function Footer({
 
   return (
     <footer className="border-t border-border bg-card">
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-sm">
-            <Image src="/images/pegas-logo.png" alt="" width={166} height={72} className="h-12 w-auto" />
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:py-16 lg:px-8">
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between lg:gap-20 xl:gap-28">
+          <div className="flex-1">
+            <div className="flex max-w-[21rem] flex-col items-start gap-5 sm:gap-6">
+              <Image
+                src="/images/pegas-logo.png"
+                alt=""
+                width={667}
+                height={374}
+                className="h-auto w-[12rem] sm:w-[13.5rem] lg:w-[15rem]"
+              />
+              <p
+                className={`${footerPhraseFont.className} max-w-[10ch] text-[2.25rem] leading-[1.12] tracking-[0.01em] text-foreground sm:text-[2.6rem] md:text-[2.85rem] lg:text-[3rem]`}
+              >
+                Свобода полёта мечты
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-8 sm:flex-row sm:gap-16">
+          <div className="grid gap-8 sm:grid-cols-2 sm:gap-12 lg:flex-none lg:gap-16 xl:gap-20">
             <div>
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">{navigationTitle}</p>
               <nav className="flex flex-col gap-2">

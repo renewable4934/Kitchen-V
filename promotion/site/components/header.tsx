@@ -57,7 +57,14 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <a href="/" className="flex items-center gap-2">
-          <Image src="/images/pegas-logo.png" alt="" width={146} height={64} className="h-10 w-auto" priority />
+          <Image
+            src="/images/pegas-logo.png"
+            alt=""
+            width={667}
+            height={374}
+            className="h-14 w-auto md:h-[3.75rem]"
+            priority
+          />
         </a>
 
         <nav className="hidden items-center gap-[44px] md:flex">
