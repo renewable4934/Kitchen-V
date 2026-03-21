@@ -54,7 +54,7 @@ export function Footer({
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-6 py-14 sm:py-16 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-10 xl:grid-cols-[minmax(20rem,auto)_1fr_auto_auto] xl:items-start xl:gap-x-16">
+        <div className="grid gap-8 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-10 xl:flex xl:items-start xl:gap-0">
           <div className="flex flex-col items-start">
             <Image
               src="/images/pegas-logo.png"
@@ -70,47 +70,29 @@ export function Footer({
             </p>
           </div>
 
-          <div>
-            <p className="mb-3 text-base font-semibold text-foreground">{navigationTitle}</p>
-            <nav className="flex flex-col gap-2">
-              {safeLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-          </div>
+          <div className="sm:col-span-2 xl:ml-auto xl:flex xl:items-start xl:gap-16">
+            <div>
+              <p className="mb-3 text-base font-semibold text-foreground">{navigationTitle}</p>
+              <nav className="flex flex-col gap-2">
+                {safeLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+            </div>
 
-          <div>
-            <p className="mb-3 text-base font-semibold text-foreground">{contactsTitle}</p>
-            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-              <a
-                href={phoneHref}
-                onClick={() =>
-                  void trackPhoneClick({
-                    sectionName: "footer",
-                    funnelType: "kitchen",
-                    offerVariant,
-                    experimentKey,
-                  })
-                }
-              >
-                {phone}
-              </a>
-              <a href={`mailto:${email}`}>{email}</a>
-              <p>{address}</p>
-              {whatsappHref ? (
+            <div className="mt-8 sm:mt-0">
+              <p className="mb-3 text-base font-semibold text-foreground">{contactsTitle}</p>
+              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                 <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={phoneHref}
                   onClick={() =>
-                    void trackCTA({
-                      buttonName: "WhatsApp",
+                    void trackPhoneClick({
                       sectionName: "footer",
                       funnelType: "kitchen",
                       offerVariant,
@@ -118,9 +100,29 @@ export function Footer({
                     })
                   }
                 >
-                  WhatsApp
+                  {phone}
                 </a>
-              ) : null}
+                <a href={`mailto:${email}`}>{email}</a>
+                <p>{address}</p>
+                {whatsappHref ? (
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() =>
+                      void trackCTA({
+                        buttonName: "WhatsApp",
+                        sectionName: "footer",
+                        funnelType: "kitchen",
+                        offerVariant,
+                        experimentKey,
+                      })
+                    }
+                  >
+                    WhatsApp
+                  </a>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
