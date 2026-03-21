@@ -76,6 +76,72 @@ jobs:
             fi
           done
 
+      - name: Sync contract descriptions to production CMS
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const { createClient } = require("./promotion/site/node_modules/@supabase/supabase-js")
+
+          const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false,
+              detectSessionInUrl: false,
+            },
+          })
+
+          const replacements = {
+            "14 дней срок поставки":
+              "Среднерыночный срок — от 45 до 60 дней. Здесь производство и логистика выстроены так, что Ваша кухня готова за 14.",
+            "1 подрядчик по всем вопросам":
+              "Вся бытовая техника подбирается, доставляется и встраивается в кухню. Скидки от производителей входят в контракт.",
+            "Гарантия 5 лет на всё":
+              "Полная гарантия на фасады, фурнитуру и механизмы. Моментальная замена в случае поломки.",
+            "70 000 ₽ / пог. метр":
+              "В цену уже входят корпуса, фасады, влагостойкая столешница, фурнитура и сборка. Всё прозрачно — без скрытых платежей.",
+          }
+
+          async function main() {
+            const { data, error } = await client
+              .from("cms_sections")
+              .select("content")
+              .eq("site_id", "main")
+              .eq("page_slug", "home")
+              .eq("variant_key", "default")
+              .eq("section_key", "contract")
+              .single()
+
+            if (error) throw error
+            if (!data || !data.content || !Array.isArray(data.content.cards)) {
+              throw new Error("contract content/cards not found")
+            }
+
+            const nextContent = {
+              ...data.content,
+              cards: data.content.cards.map((card) =>
+                Object.prototype.hasOwnProperty.call(replacements, card.title)
+                  ? { ...card, description: replacements[card.title] }
+                  : card,
+              ),
+            }
+
+            const { error: updateError } = await client
+              .from("cms_sections")
+              .update({ content: nextContent })
+              .eq("site_id", "main")
+              .eq("page_slug", "home")
+              .eq("variant_key", "default")
+              .eq("section_key", "contract")
+
+            if (updateError) throw updateError
+          }
+
+          main().catch((error) => {
+            console.error(error.message)
+            process.exit(1)
+          })
+          NODE
+
       - name: Prepare runtime env file
         run: |
           set -euo pipefail
