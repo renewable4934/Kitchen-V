@@ -439,8 +439,8 @@ export const fallbackSiteContent: SiteContent = {
       fields: {
         nameLabel: "Имя",
         namePlaceholder: "Ваше имя",
-        phoneLabel: "Телефон",
-        phonePlaceholder: "+7 (999) 999-99-99",
+        phoneLabel: "Напишите пожалуйста Ваш номер телефона",
+        phonePlaceholder: "Напишите пожалуйста Ваш номер телефона",
         commentLabel: "Комментарий",
         commentPlaceholder: "Опишите пожелания к проекту",
       },

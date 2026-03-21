@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import type { ClipboardEvent } from "react"
 import { useRef, useState } from "react"
 import {
   Check,
@@ -42,6 +43,11 @@ type ContactMethodOption = {
   Icon: typeof Phone
 }
 
+type StepItem = {
+  id: string
+  label: string
+}
+
 const styleOptions: StyleOption[] = [
   { value: "neoklassika", label: "Неоклассика", imageSrc: "/images/configurator/styles/neoklassika.png" },
   { value: "minimalizm", label: "Минимализм", imageSrc: "/images/configurator/styles/minimalizm.png" },
@@ -80,31 +86,33 @@ const contactMethodOptions: ContactMethodOption[] = [
   { value: "whatsapp", label: "WhatsApp", Icon: MessageCircle },
 ]
 
-function buildDiscountPayload(discounts: string[], options: DiscountOption[]) {
-  return discounts
-    .map((value) => {
-      const option = options.find((item) => item.value === value)
-      if (!option) {
-        return null
-      }
+const stepItems: StepItem[] = [
+  { id: "styles", label: "Стиль" },
+  { id: "shape", label: "Форма" },
+  { id: "appliances", label: "Техника" },
+  { id: "details", label: "Размер" },
+  { id: "discount", label: "Скидка" },
+  { id: "contact", label: "Контакт" },
+]
 
-      return {
-        value: option.value,
-        label: option.label,
-        discount: option.discount,
-        kind: option.kind || "percent",
-        amount: option.amount ?? 0,
-      }
-    })
-    .filter(Boolean)
+function buildDiscountPayload(discounts: string[], options: DiscountOption[]) {
+  return options
+    .filter((option) => discounts.includes(option.value))
+    .map((option) => ({
+      value: option.value,
+      label: option.label,
+      discount: option.discount,
+      kind: option.kind || "percent",
+      amount: option.amount ?? 0,
+    }))
 }
 
-function sanitizePhoneInput(value: string) {
+function extractDigits(value: string) {
   return value.replace(/\D/g, "")
 }
 
 function normalizePhoneDigits(value: string) {
-  const digits = sanitizePhoneInput(value)
+  const digits = extractDigits(value)
 
   if (!digits) {
     return ""
@@ -118,11 +126,11 @@ function normalizePhoneDigits(value: string) {
     return digits.slice(0, 11)
   }
 
-  if (digits.length === 10 && /^[9]/.test(digits)) {
+  if (digits.length === 10 && digits[0] === "9") {
     return `7${digits}`
   }
 
-  if (digits.length <= 10 && /^[89]/.test(digits)) {
+  if (digits.length <= 10 && (digits[0] === "8" || digits[0] === "9")) {
     const normalized = digits[0] === "8" ? `7${digits.slice(1)}` : `7${digits}`
     return normalized.slice(0, 11)
   }
@@ -131,7 +139,7 @@ function normalizePhoneDigits(value: string) {
     return digits.slice(0, 11)
   }
 
-  if (/^[9]/.test(digits)) {
+  if (digits[0] === "9") {
     return `7${digits}`.slice(0, 11)
   }
 
@@ -174,10 +182,10 @@ function formatPhone(value: string) {
 
 function countDigitsBeforeCursor(value: string, cursor: number | null) {
   if (cursor === null) {
-    return sanitizePhoneInput(value).length
+    return extractDigits(value).length
   }
 
-  return sanitizePhoneInput(value.slice(0, cursor)).length
+  return extractDigits(value.slice(0, cursor)).length
 }
 
 function getCursorPositionFromDigits(value: string, digitsCount: number) {
@@ -216,7 +224,7 @@ export function ConfiguratorSection({
   const discountOptions = Array.isArray(content.discountOptions) ? content.discountOptions : []
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
-  const [selectedShape, setSelectedShape] = useState<string>("")
+  const [selectedShape, setSelectedShape] = useState("")
   const [selectedAppliances, setSelectedAppliances] = useState<string[]>([])
   const [meters, setMeters] = useState("")
   const [needsMeasurement, setNeedsMeasurement] = useState(false)
@@ -233,13 +241,13 @@ export function ConfiguratorSection({
   const hasTrackedFormStartRef = useRef(false)
   const phoneInputRef = useRef<HTMLInputElement | null>(null)
 
-  const totalSteps = 6
+  const totalSteps = stepItems.length
   const isDiscountStep = currentStep === 4
   const isContactStep = currentStep === 5
   const progress = ((currentStep + 1) / totalSteps) * 100
   const parsedMeters = meters.trim() ? Number(meters.replace(",", ".")) : null
   const hasValidMeters = parsedMeters !== null && Number.isFinite(parsedMeters) && parsedMeters > 0
-  const estimatedPrice = hasValidMeters ? parsedMeters * 70000 : null
+  const estimatedPrice = hasValidMeters && !needsMeasurement ? parsedMeters * 70000 : null
 
   const markFormStarted = () => {
     if (hasTrackedFormStartRef.current) {
@@ -298,7 +306,7 @@ export function ConfiguratorSection({
 
   const handleBudgetChange = (value: string) => {
     markFormStarted()
-    setBudget(sanitizePhoneInput(value))
+    setBudget(extractDigits(value))
   }
 
   const handlePhoneChange = (value: string, cursorPosition: number | null) => {
@@ -317,6 +325,22 @@ export function ConfiguratorSection({
       const nextCursor = getCursorPositionFromDigits(formatted, digitsBeforeCursor)
       input.setSelectionRange(nextCursor, nextCursor)
     })
+  }
+
+  const handlePhoneCopy = (event: ClipboardEvent<HTMLInputElement>) => {
+    const input = phoneInputRef.current
+    if (!input) {
+      return
+    }
+
+    const { selectionStart, selectionEnd, value } = input
+    const copiedValue =
+      selectionStart !== null && selectionEnd !== null && selectionStart !== selectionEnd
+        ? value.slice(selectionStart, selectionEnd)
+        : value
+
+    event.clipboardData.setData("text/plain", copiedValue)
+    event.preventDefault()
   }
 
   const canProceed = () => {
@@ -356,24 +380,25 @@ export function ConfiguratorSection({
     setSubmitting(true)
 
     const trackingContext = getTrackingContext()
+    const formattedPhone = formatPhone(contactInfo.phone)
+    const normalizedPhoneDigits = normalizePhoneDigits(contactInfo.phone)
     const payload = {
       funnel_type: "kitchen",
       name: contactInfo.name,
-      phone: contactInfo.phone,
+      phone: formattedPhone,
       city: "Москва",
       comment: null,
       prefer_messenger: contactInfo.contactMethod !== "call",
       quiz_answers: {
-        styles: selectedStyles
-          .map((value) => styleOptions.find((item) => item.value === value)?.label)
-          .filter(Boolean),
+        styles: styleOptions.filter((item) => selectedStyles.includes(item.value)).map((item) => item.label),
         kitchen_shape: shapeOptions.find((item) => item.value === selectedShape)?.label || null,
-        appliances: selectedAppliances,
+        appliances: applianceOptions.filter((item) => selectedAppliances.includes(item)),
         meters: hasValidMeters && !needsMeasurement ? parsedMeters : null,
         need_measurement: needsMeasurement,
         desired_budget: budget ? Number(budget) : null,
         discounts: buildDiscountPayload(selectedDiscounts, discountOptions),
-        phone: contactInfo.phone,
+        phone: formattedPhone,
+        phone_digits: normalizedPhoneDigits || null,
         contact_method: contactMethodOptions.find((item) => item.value === contactInfo.contactMethod)?.label || null,
       },
       offer_variant: offerVariant,
@@ -444,28 +469,37 @@ export function ConfiguratorSection({
           <p className="mt-4 text-lg text-muted-foreground">{content.description}</p>
         </div>
 
-        <div className="mb-8">
-          <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+        <div className="mb-8 space-y-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{`Шаг ${currentStep + 1} из ${totalSteps}`}</span>
-            <span>{`${Math.round(progress)}%`}</span>
+            <span>{stepItems[currentStep]?.label}</span>
           </div>
-          <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="grid grid-cols-6 gap-2">
-            {Array.from({ length: totalSteps }).map((_, index) => {
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {stepItems.map((step, index) => {
               const isActive = index === currentStep
               const isDone = index < currentStep
 
               return (
-                <div key={index} className="flex items-center gap-2">
+                <div
+                  key={step.id}
+                  className={`rounded-2xl border px-3 py-3 text-center transition-all ${
+                    isDone
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : isActive
+                        ? "border-primary bg-primary/8 text-primary ring-1 ring-primary/20"
+                        : "border-border bg-card text-muted-foreground"
+                  }`}
+                >
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-all ${
+                    className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-all ${
                       isDone
-                        ? "border-primary bg-primary text-primary-foreground"
+                        ? "border-primary-foreground/30 bg-primary-foreground/12 text-primary-foreground"
                         : isActive
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-border bg-background text-muted-foreground"
@@ -473,284 +507,350 @@ export function ConfiguratorSection({
                   >
                     {isDone ? <Check className="h-4 w-4" /> : index + 1}
                   </div>
-                  {index < totalSteps - 1 ? (
-                    <div
-                      className={`hidden h-px flex-1 sm:block ${isDone ? "bg-primary" : "bg-border"}`}
-                      aria-hidden="true"
-                    />
-                  ) : null}
+                  <span
+                    className={`mt-2 block text-xs font-medium leading-tight ${
+                      isDone ? "text-primary-foreground" : isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
                 </div>
               )
             })}
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-background p-6 sm:p-8">
-          {currentStep === 0 ? (
-            <div>
-              <h3 className="font-serif text-2xl font-bold text-foreground">
-                В какой атмосфере Вам хочется находиться на своей кухне?
-              </h3>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {styleOptions.map((option) => {
-                  const isSelected = selectedStyles.includes(option.value)
-
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => toggleStyle(option.value)}
-                      aria-pressed={isSelected}
-                      className={`overflow-hidden rounded-lg border text-left transition-all ${
-                        isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <div className="relative aspect-[4/3] w-full">
-                        <Image src={option.imageSrc} alt="" fill className="object-cover" />
-                        {isSelected ? (
-                          <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                            <Check className="h-4 w-4" />
-                          </div>
-                        ) : null}
-                      </div>
-                      <span className={`block p-4 text-base font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
-                        {option.label}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {currentStep === 1 ? (
-            <div>
-              <h3 className="font-serif text-2xl font-bold text-foreground">Какая форма кухни планируется Вами?</h3>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {shapeOptions.map((option) => {
-                  const isSelected = selectedShape === option.value
-
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => selectShape(option.value)}
-                      aria-pressed={isSelected}
-                      className={`overflow-hidden rounded-lg border text-left transition-all ${
-                        isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <div className="relative aspect-[4/3] w-full">
-                        <Image src={option.imageSrc} alt="" fill className="object-cover" />
-                      </div>
-                      <span className={`block p-4 text-base font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
-                        {option.label}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {currentStep === 2 ? (
-            <div>
-              <h3 className="font-serif text-2xl font-bold text-foreground">
-                Какую бытовую технику Вы хотели бы приобрести и установить с нашей помощью?
-              </h3>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {applianceOptions.map((option) => {
-                  const isSelected = selectedAppliances.includes(option)
-
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => toggleAppliance(option)}
-                      aria-pressed={isSelected}
-                      className={`rounded-full border px-4 py-3 text-left text-sm font-medium transition-all sm:text-base ${
-                        isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {currentStep === 3 ? (
-            <div className="space-y-8">
-              <div>
-                <h3 className="font-serif text-2xl font-bold text-foreground">Какого размера кухню вы планируете?</h3>
-                <div className="mt-6 max-w-xl">
-                  <input
-                    id="kitchen-size"
-                    type="text"
-                    inputMode="decimal"
-                    value={meters}
-                    onChange={(event) => handleMetersChange(event.target.value)}
-                    disabled={needsMeasurement}
-                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Какого размера кухню вы планируете?"
-                  />
-                  <label className="mt-4 inline-flex cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={needsMeasurement}
-                      onChange={(event) => handleNeedsMeasurementChange(event.target.checked)}
-                      className="h-4 w-4 rounded border-input accent-primary"
-                    />
-                    <span className="text-sm text-foreground">Необходимо замерить</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-serif text-2xl font-bold text-foreground">Какой желаемый бюджет для Вас?</h3>
-                <div className="mt-6 max-w-xl">
-                  <input
-                    id="desired-budget"
-                    type="text"
-                    inputMode="numeric"
-                    value={budget}
-                    onChange={(event) => handleBudgetChange(event.target.value)}
-                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    aria-label="Какой желаемый бюджет для Вас?"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {isDiscountStep ? (
-            <div>
-              <h3 className="font-serif text-2xl font-bold text-foreground">{content.discountTitle}</h3>
-              <p className="mt-1 text-muted-foreground">{content.discountDescription}</p>
-              <div className="mt-6 flex flex-col gap-3">
-                {discountOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => toggleDiscount(option.value)}
-                    className={`flex items-center justify-between rounded-lg border p-4 text-left transition-all ${
-                      selectedDiscounts.includes(option.value)
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "border-border hover:border-primary/30"
-                    }`}
-                  >
-                    <span className="text-base font-medium text-foreground">{option.label}</span>
-                    <span
-                      className={`rounded-full px-3 py-1 text-sm font-medium ${
-                        selectedDiscounts.includes(option.value)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {`-${option.discount}`}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {isContactStep ? (
-            <div className="mx-auto max-w-4xl">
-              <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 text-green-600">
-                <Check className="h-10 w-10" />
-              </div>
-
-              <div className="text-center">
-                <h3 className="font-serif text-3xl font-bold text-foreground sm:text-4xl">
-                  {estimatedPrice !== null && !needsMeasurement
-                    ? `Стоимость Вашей кухни примерно ${formatPrice(estimatedPrice)} р`
-                    : "Стоимость Вашей кухни пока не определена"}
+        <div className="rounded-[1.75rem] border border-border bg-background p-5 shadow-sm sm:p-8">
+          <div className="sm:min-h-[38rem]">
+            {currentStep === 0 ? (
+              <div className="mx-auto max-w-5xl">
+                <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
+                  В какой атмосфере Вам хочется находиться на своей кухне?
                 </h3>
-                <p className="mx-auto mt-4 max-w-3xl text-lg text-muted-foreground">
-                  Оставьте контакт — и получите 3D-проект с точной сметой в течение суток.
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                  Можно выбрать один или несколько стилей. Мы сохраним выбранные варианты и вернемся к ним, если Вы
+                  захотите изменить ответ позже.
                 </p>
-              </div>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {styleOptions.map((option) => {
+                    const isSelected = selectedStyles.includes(option.value)
 
-              <div className="mt-8 space-y-5">
-                <div>
-                  <label htmlFor="name" className="mb-1 block text-sm font-medium text-foreground">
-                    {content.fields.nameLabel}
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={contactInfo.name}
-                    onChange={(event) => setContactInfo((prev) => ({ ...prev, name: event.target.value }))}
-                    placeholder={content.fields.namePlaceholder}
-                    className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="mb-1 block text-sm font-medium text-foreground">
-                    Напишите пожалуйста Ваш номер телефона
-                  </label>
-                  <input
-                    id="phone"
-                    ref={phoneInputRef}
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={contactInfo.phone}
-                    onChange={(event) => handlePhoneChange(event.target.value, event.target.selectionStart)}
-                    placeholder="Напишите пожалуйста Ваш номер телефона"
-                    className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <p className="mb-3 text-sm font-medium text-foreground">Удобный способ связи</p>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {contactMethodOptions.map((option) => {
-                      const isSelected = contactInfo.contactMethod === option.value
-                      const Icon = option.Icon
-
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setContactInfo((prev) => ({ ...prev, contactMethod: option.value }))}
-                          aria-pressed={isSelected}
-                          className={`rounded-2xl border p-4 text-left transition-all ${
-                            isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary/30"
-                          }`}
-                        >
-                          <Icon className={`h-6 w-6 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
-                          <span className={`mt-4 block text-base font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => toggleStyle(option.value)}
+                        aria-pressed={isSelected}
+                        aria-label={option.label}
+                        className={`group flex h-full flex-col overflow-hidden rounded-[1.25rem] border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-[0_10px_30px_rgba(36,72,126,0.10)] ring-1 ring-primary/30"
+                            : "border-border hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]"
+                        }`}
+                      >
+                        <div className="relative aspect-[4/3] w-full">
+                          <Image
+                            src={option.imageSrc}
+                            alt={option.label}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 25vw"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/25 via-black/5 to-transparent" />
+                          {isSelected ? (
+                            <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                              <Check className="h-4 w-4" />
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="flex min-h-[5.25rem] flex-1 items-center px-4 py-4 sm:px-5">
+                          <span
+                            className={`block text-base font-medium leading-snug ${
+                              isSelected ? "text-primary" : "text-foreground"
+                            }`}
+                          >
                             {option.label}
                           </span>
-                        </button>
-                      )
-                    })}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {currentStep === 1 ? (
+              <div className="mx-auto max-w-5xl">
+                <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
+                  Какая форма кухни планируется Вами?
+                </h3>
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  {shapeOptions.map((option) => {
+                    const isSelected = selectedShape === option.value
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => selectShape(option.value)}
+                        aria-pressed={isSelected}
+                        aria-label={option.label}
+                        className={`group flex h-full flex-col overflow-hidden rounded-[1.25rem] border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-[0_10px_30px_rgba(36,72,126,0.10)] ring-1 ring-primary/30"
+                            : "border-border hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]"
+                        }`}
+                      >
+                        <div className="relative aspect-[4/3] w-full">
+                          <Image
+                            src={option.imageSrc}
+                            alt={option.label}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 767px) 100vw, 33vw"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/20 via-black/5 to-transparent" />
+                        </div>
+                        <div className="flex min-h-[5rem] items-center px-4 py-4 sm:px-5">
+                          <span className={`block text-base font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
+                            {option.label}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {currentStep === 2 ? (
+              <div className="mx-auto max-w-4xl">
+                <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
+                  Какую бытовую технику Вы хотели бы приобрести и установить с нашей помощью?
+                </h3>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {applianceOptions.map((option) => {
+                    const isSelected = selectedAppliances.includes(option)
+
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => toggleAppliance(option)}
+                        aria-pressed={isSelected}
+                        className={`flex min-h-14 items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:text-base ${
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground shadow-[0_10px_30px_rgba(36,72,126,0.12)]"
+                            : "border-border text-foreground hover:border-primary/30 hover:bg-primary/5"
+                        }`}
+                      >
+                        <span>{option}</span>
+                        <span
+                          className={`ml-3 flex h-6 w-6 items-center justify-center rounded-full border ${
+                            isSelected
+                              ? "border-primary-foreground/40 bg-primary-foreground/12 text-primary-foreground"
+                              : "border-border bg-background text-transparent"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {currentStep === 3 ? (
+              <div className="mx-auto max-w-3xl space-y-8">
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">
+                    Какого размера кухню вы планируете?
+                  </h3>
+                  <div className="mt-6 max-w-xl space-y-3">
+                    <input
+                      id="kitchen-size"
+                      type="text"
+                      inputMode="decimal"
+                      value={meters}
+                      onChange={(event) => handleMetersChange(event.target.value)}
+                      disabled={needsMeasurement}
+                      placeholder="Например, 6"
+                      className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Какого размера кухню вы планируете?"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Можно указать дробное значение, если длина известна не точно.
+                    </p>
+                    <label className="inline-flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={needsMeasurement}
+                        onChange={(event) => handleNeedsMeasurementChange(event.target.checked)}
+                        className="h-4 w-4 rounded border-input accent-primary"
+                      />
+                      <span className="text-sm text-foreground">Необходимо замерить</span>
+                    </label>
                   </div>
                 </div>
 
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={contactInfo.consent}
-                    onChange={(event) => setContactInfo((prev) => ({ ...prev, consent: event.target.checked }))}
-                    className="mt-1 h-4 w-4 rounded border-input accent-primary"
-                  />
-                  <span className="text-sm text-muted-foreground">{content.consentLabel}</span>
-                </label>
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">
+                    Какой желаемый бюджет для Вас?
+                  </h3>
+                  <div className="mt-6 max-w-xl space-y-3">
+                    <input
+                      id="desired-budget"
+                      type="text"
+                      inputMode="numeric"
+                      value={budget}
+                      onChange={(event) => handleBudgetChange(event.target.value)}
+                      placeholder="Например, 350000"
+                      className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      aria-label="Какой желаемый бюджет для Вас?"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Это поле необязательно. Если пока сомневаетесь, можно оставить его пустым.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
 
-          <div className="mt-8 flex items-center justify-between gap-4 border-t border-border pt-6">
+            {isDiscountStep ? (
+              <div className="mx-auto max-w-3xl">
+                <h3 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">{content.discountTitle}</h3>
+                <p className="mt-2 max-w-2xl text-muted-foreground">{content.discountDescription}</p>
+                <div className="mt-6 flex flex-col gap-3">
+                  {discountOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => toggleDiscount(option.value)}
+                      className={`flex min-h-16 items-center justify-between rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                        selectedDiscounts.includes(option.value)
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border hover:border-primary/30 hover:bg-primary/5"
+                      }`}
+                    >
+                      <span className="text-base font-medium text-foreground">{option.label}</span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-sm font-medium ${
+                          selectedDiscounts.includes(option.value)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {`-${option.discount}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {isContactStep ? (
+              <div className="mx-auto max-w-4xl">
+                <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 text-green-600">
+                  <Check className="h-10 w-10" />
+                </div>
+
+                <div className="text-center">
+                  <h3 className="font-serif text-3xl font-bold text-foreground text-balance sm:text-4xl">
+                    {estimatedPrice !== null
+                      ? `Стоимость Вашей кухни примерно ${formatPrice(estimatedPrice)} р`
+                      : "Стоимость Вашей кухни пока не определена"}
+                  </h3>
+                  <p className="mx-auto mt-4 max-w-3xl text-lg text-muted-foreground">
+                    Оставьте контакт — и получите 3D-проект с точной сметой в течение суток.
+                  </p>
+                </div>
+
+                <div className="mt-8 space-y-5">
+                  <div>
+                    <label htmlFor="name" className="mb-1 block text-sm font-medium text-foreground">
+                      {content.fields.nameLabel}
+                    </label>
+                    <input
+                      id="name"
+                      type="text"
+                      value={contactInfo.name}
+                      onChange={(event) => setContactInfo((prev) => ({ ...prev, name: event.target.value }))}
+                      placeholder={content.fields.namePlaceholder}
+                      className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="phone" className="mb-1 block text-sm font-medium text-foreground">
+                      Напишите пожалуйста Ваш номер телефона
+                    </label>
+                    <input
+                      id="phone"
+                      ref={phoneInputRef}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={contactInfo.phone}
+                      onChange={(event) => handlePhoneChange(event.target.value, event.target.selectionStart)}
+                      onCopy={handlePhoneCopy}
+                      placeholder="Напишите пожалуйста Ваш номер телефона"
+                      maxLength={16}
+                      className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Подойдет любой привычный ввод: мы сами приведем номер к формату +7 928 123-45-67.
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-sm font-medium text-foreground">Удобный способ связи</p>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {contactMethodOptions.map((option) => {
+                        const isSelected = contactInfo.contactMethod === option.value
+                        const Icon = option.Icon
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setContactInfo((prev) => ({ ...prev, contactMethod: option.value }))}
+                            aria-pressed={isSelected}
+                            className={`rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                              isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary/30 hover:bg-primary/5"
+                            }`}
+                          >
+                            <Icon className={`h-6 w-6 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`mt-4 block text-base font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
+                              {option.label}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={contactInfo.consent}
+                      onChange={(event) => setContactInfo((prev) => ({ ...prev, consent: event.target.checked }))}
+                      className="mt-1 h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <span className="text-sm text-muted-foreground">{content.consentLabel}</span>
+                  </label>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <button
               type="button"
               onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
               disabled={currentStep === 0}
-              className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-40 sm:min-w-[148px] sm:w-auto"
             >
               <ChevronLeft className="h-4 w-4" />
               {content.backButtonLabel}
@@ -761,7 +861,7 @@ export function ConfiguratorSection({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canProceed() || submitting}
-                className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 sm:min-w-[148px] sm:w-auto"
               >
                 {submitting ? (
                   <>
@@ -777,7 +877,7 @@ export function ConfiguratorSection({
                 type="button"
                 onClick={handleNext}
                 disabled={!canProceed()}
-                className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 sm:min-w-[148px] sm:w-auto"
               >
                 {content.nextButtonLabel}
                 <ChevronRight className="h-4 w-4" />
