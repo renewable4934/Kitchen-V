@@ -54,8 +54,8 @@ export function Footer({
   return (
     <footer className="border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-6 py-14 sm:py-16 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-10 xl:grid-cols-[auto_auto_minmax(9rem,0.7fr)_minmax(15rem,0.95fr)] xl:items-start xl:gap-x-16">
-          <div className="flex items-center">
+        <div className="grid gap-8 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-10 xl:grid-cols-[minmax(20rem,auto)_minmax(9rem,0.7fr)_minmax(15rem,0.95fr)] xl:items-start xl:gap-x-16">
+          <div className="flex flex-col items-start">
             <Image
               src="/images/pegas-logo.png"
               alt=""
@@ -63,13 +63,10 @@ export function Footer({
               height={374}
               className="h-auto w-[8.75rem] sm:w-[9.5rem] lg:w-[10.25rem]"
             />
-          </div>
-
-          <div className="flex items-center sm:max-w-[18rem] xl:min-h-[7rem] xl:max-w-none">
             <p
-              className={`${footerPhraseFont.className} text-[2.25rem] leading-[1.1] tracking-[0.01em] text-foreground sm:text-[2.45rem] lg:text-[2.6rem] xl:text-[2.8rem] xl:whitespace-nowrap`}
+              className={`${footerPhraseFont.className} mt-3 whitespace-nowrap text-[2.25rem] leading-[1.1] tracking-[0.01em] text-foreground sm:text-[2.45rem] lg:text-[2.6rem] xl:text-[2.8rem]`}
             >
-              Свобода полёта мечты
+              Свобода полета мечты
             </p>
           </div>
 
