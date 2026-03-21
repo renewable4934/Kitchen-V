@@ -213,7 +213,9 @@ function isPhoneComplete(value: string) {
 }
 
 function formatPrice(value: number) {
-  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(Math.round(value))
+  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 })
+    .format(Math.round(value))
+    .replace(/[\u00A0\u202F]/g, " ")
 }
 
 export function ConfiguratorSection({
@@ -341,6 +343,22 @@ export function ConfiguratorSection({
 
     event.clipboardData.setData("text/plain", copiedValue)
     event.preventDefault()
+  }
+
+  const handlePhonePaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault()
+
+    const input = phoneInputRef.current
+    if (!input) {
+      return
+    }
+
+    const pastedText = event.clipboardData.getData("text/plain")
+    const selectionStart = input.selectionStart ?? input.value.length
+    const selectionEnd = input.selectionEnd ?? selectionStart
+    const nextValue = `${input.value.slice(0, selectionStart)}${pastedText}${input.value.slice(selectionEnd)}`
+
+    handlePhoneChange(nextValue, selectionStart + pastedText.length)
   }
 
   const canProceed = () => {
@@ -756,18 +774,18 @@ export function ConfiguratorSection({
                   <Check className="h-10 w-10" />
                 </div>
 
-                <div className="text-center">
-                  <h3 className="font-serif text-3xl font-bold text-foreground text-balance sm:text-4xl">
+                <div className="rounded-[1.5rem] bg-secondary/70 px-5 py-6 text-center sm:px-8 sm:py-8">
+                  <h3 className="font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
                     {estimatedPrice !== null
                       ? `Стоимость Вашей кухни примерно ${formatPrice(estimatedPrice)} р`
                       : "Стоимость Вашей кухни пока не определена"}
                   </h3>
-                  <p className="mx-auto mt-4 max-w-3xl text-lg text-muted-foreground">
+                  <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
                     Оставьте контакт — и получите 3D-проект с точной сметой в течение суток.
                   </p>
                 </div>
 
-                <div className="mt-8 space-y-5">
+                <div className="mt-8 space-y-6">
                   <div>
                     <label htmlFor="name" className="mb-1 block text-sm font-medium text-foreground">
                       {content.fields.nameLabel}
@@ -784,7 +802,7 @@ export function ConfiguratorSection({
 
                   <div>
                     <label htmlFor="phone" className="mb-1 block text-sm font-medium text-foreground">
-                      Напишите пожалуйста Ваш номер телефона
+                      {content.fields.phoneLabel}
                     </label>
                     <input
                       id="phone"
@@ -795,11 +813,13 @@ export function ConfiguratorSection({
                       value={contactInfo.phone}
                       onChange={(event) => handlePhoneChange(event.target.value, event.target.selectionStart)}
                       onCopy={handlePhoneCopy}
-                      placeholder="Напишите пожалуйста Ваш номер телефона"
+                      onPaste={handlePhonePaste}
+                      placeholder={content.fields.phonePlaceholder}
                       maxLength={16}
+                      aria-describedby="phone-hint"
                       className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p id="phone-hint" className="mt-2 text-sm leading-6 text-muted-foreground">
                       Подойдет любой привычный ввод: мы сами приведем номер к формату +7 928 123-45-67.
                     </p>
                   </div>
@@ -817,7 +837,7 @@ export function ConfiguratorSection({
                             type="button"
                             onClick={() => setContactInfo((prev) => ({ ...prev, contactMethod: option.value }))}
                             aria-pressed={isSelected}
-                            className={`rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                            className={`flex min-h-28 flex-col justify-between rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                               isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary/30 hover:bg-primary/5"
                             }`}
                           >
