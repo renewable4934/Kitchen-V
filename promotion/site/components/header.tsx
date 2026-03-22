@@ -1,11 +1,17 @@
 "use client"
 
 import Image from "next/image"
+import { Cormorant_Garamond } from "next/font/google"
 import { useEffect, useState } from "react"
 import { Menu, X } from "lucide-react"
 
 import type { ActionLink, NavLink } from "@/lib/site-content"
 import { trackCTA } from "@/lib/tracking"
+
+const headerWordmarkFont = Cormorant_Garamond({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500"],
+})
 
 type HeaderProps = {
   brandName: string
@@ -20,6 +26,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
   const safeLinks = Array.isArray(links) ? links : []
   const ctaHref = cta?.href || "#configurator"
   const ctaLabel = cta?.label || ""
+  const brandLabel = brandName.toUpperCase()
 
   useEffect(() => {
     const previousScrollRestoration = window.history.scrollRestoration
@@ -56,7 +63,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <a href="/" className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2.5" aria-label={brandName}>
           <Image
             src="/images/pegas-logo.png"
             alt=""
@@ -65,6 +72,11 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
             className="h-14 w-auto md:h-[3.75rem]"
             priority
           />
+          <span
+            className={`${headerWordmarkFont.className} translate-y-[0.04em] text-[2rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2.2rem] md:text-[2.35rem] lg:text-[2.55rem]`}
+          >
+            {brandLabel}
+          </span>
         </a>
 
         <nav className="hidden items-center gap-[44px] md:flex">

@@ -46,6 +46,7 @@ export function Footer({
 }: FooterProps) {
   const safeLinks = Array.isArray(links) ? links : []
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`
+  const brandLabel = brandName.toUpperCase()
   const whatsappHref =
     whatsappPhone && whatsappPhone.trim()
       ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`
@@ -56,13 +57,20 @@ export function Footer({
       <div className="mx-auto max-w-7xl px-6 py-14 sm:py-16 lg:px-8">
         <div className="grid gap-8 sm:grid-cols-2 sm:gap-x-12 sm:gap-y-10 xl:flex xl:items-start xl:gap-0">
           <div className="flex flex-col items-start">
-            <Image
-              src="/images/pegas-logo.png"
-              alt=""
-              width={667}
-              height={374}
-              className="h-auto w-[8.75rem] sm:w-[9.5rem] lg:w-[10.25rem]"
-            />
+            <div className="flex items-center gap-3 sm:gap-4" aria-label={brandName}>
+              <Image
+                src="/images/pegas-logo.png"
+                alt=""
+                width={667}
+                height={374}
+                className="h-auto w-[8.75rem] sm:w-[9.5rem] lg:w-[10.25rem]"
+              />
+              <span
+                className={`${footerPhraseFont.className} translate-y-[0.04em] text-[2.35rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2.65rem] lg:text-[2.9rem]`}
+              >
+                {brandLabel}
+              </span>
+            </div>
             <p
               className={`${footerPhraseFont.className} mt-3 whitespace-nowrap text-[2.25rem] leading-[1.1] tracking-[0.01em] text-foreground sm:text-[2.45rem] lg:text-[2.6rem] xl:text-[2.8rem]`}
             >
