@@ -73,7 +73,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
             priority
           />
           <span
-            className={`${headerWordmarkFont.className} translate-y-[0.04em] text-[2rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2.2rem] md:text-[2.35rem] lg:text-[2.55rem]`}
+            className={`${headerWordmarkFont.className} translate-y-[0.04em] text-[1.8rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2rem] md:text-[2.15rem] lg:text-[2.3rem]`}
           >
             {brandLabel}
           </span>

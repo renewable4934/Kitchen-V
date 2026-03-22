@@ -67,7 +67,7 @@ export function Footer({
                 className="h-auto w-[8.75rem] sm:w-[9.5rem] lg:w-[10.25rem]"
               />
               <span
-                className={`${footerPhraseFont.className} translate-y-[0.04em] text-[2.35rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2.65rem] lg:text-[2.9rem]`}
+                className={`${footerPhraseFont.className} translate-y-[0.04em] text-[2.1rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2.4rem] lg:text-[2.6rem]`}
               >
                 {brandLabel}
               </span>
