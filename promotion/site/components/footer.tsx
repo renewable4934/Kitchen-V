@@ -46,6 +46,7 @@ export function Footer({
 }: FooterProps) {
   const safeLinks = Array.isArray(links) ? links : []
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`
+  const addressHref = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`
   const brandLabel = brandName.toUpperCase()
   const whatsappHref =
     whatsappPhone && whatsappPhone.trim()
@@ -111,7 +112,14 @@ export function Footer({
                   {phone}
                 </a>
                 <a href={`mailto:${email}`}>{email}</a>
-                <p>{address}</p>
+                <a
+                  href={addressHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-foreground hover:underline underline-offset-2"
+                >
+                  {address}
+                </a>
                 {whatsappHref ? (
                   <a
                     href={whatsappHref}
