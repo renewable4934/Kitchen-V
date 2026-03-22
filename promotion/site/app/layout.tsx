@@ -19,6 +19,34 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteUrl),
     title: content.page.title,
     description: content.page.description,
+    manifest: "/site.webmanifest",
+    icons: {
+      icon: [
+        {
+          url: "/favicon-light-32x32.png",
+          sizes: "32x32",
+          type: "image/png",
+          media: "(prefers-color-scheme: light)",
+        },
+        {
+          url: "/favicon-dark-32x32.png",
+          sizes: "32x32",
+          type: "image/png",
+          media: "(prefers-color-scheme: dark)",
+        },
+        {
+          url: "/favicon.svg",
+          type: "image/svg+xml",
+        },
+        {
+          url: "/favicon-96x96.png",
+          sizes: "96x96",
+          type: "image/png",
+        },
+      ],
+      shortcut: [{ url: "/favicon.ico" }],
+      apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    },
     alternates: {
       canonical: "/",
     },
