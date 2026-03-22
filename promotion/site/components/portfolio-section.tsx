@@ -27,6 +27,17 @@ function resolveImageSrc(imageKey: string, assets: Record<string, CmsAsset>) {
   return assets[imageKey]?.publicUrl || "/images/placeholder.jpg"
 }
 
+function getPortfolioCardName(name: string) {
+  const namesForCard: Record<string, string> = {
+    Анна: "Анны",
+    Михаил: "Михаила",
+    Елена: "Елены",
+    Пётр: "Петра",
+  }
+
+  return namesForCard[name] || name
+}
+
 export function PortfolioSection({ content, assets }: PortfolioSectionProps) {
   const [active, setActive] = useState(0)
   const activeItem = content.items[active] || content.items[0]
@@ -62,7 +73,7 @@ export function PortfolioSection({ content, assets }: PortfolioSectionProps) {
                       />
                       <div className="absolute inset-0 bg-foreground/20 transition-opacity group-hover:bg-foreground/30" />
                       <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <p className="text-sm font-medium text-card">{`Для ${item.name}`}</p>
+                        <p className="text-sm font-medium text-card">{`Для ${getPortfolioCardName(item.name)}`}</p>
                         <p className="text-xs text-card/80">{item.style}</p>
                       </div>
                     </div>
