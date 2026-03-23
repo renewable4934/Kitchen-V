@@ -49,17 +49,17 @@ type StepItem = {
 }
 
 const styleOptions: StyleOption[] = [
-  { value: "neoklassika", label: "Неоклассика", imageSrc: "/images/configurator/styles/neoklassika.png" },
-  { value: "minimalizm", label: "Минимализм", imageSrc: "/images/configurator/styles/minimalizm.png" },
-  { value: "eko", label: "Эко", imageSrc: "/images/configurator/styles/eko.png" },
-  { value: "klassika", label: "Классика", imageSrc: "/images/configurator/styles/klassika.png" },
-  { value: "skandi-dzen", label: "Сканди-дзен", imageSrc: "/images/configurator/styles/skandi-dzen.png" },
-  { value: "loft", label: "Лофт", imageSrc: "/images/configurator/styles/loft.png" },
-  { value: "kantri", label: "Кантри", imageSrc: "/images/configurator/styles/kantri.png" },
+  { value: "neoklassika", label: "Неоклассика", imageSrc: "/images/configurator/styles-webp/neoklassika.webp" },
+  { value: "minimalizm", label: "Минимализм", imageSrc: "/images/configurator/styles-webp/minimalizm.webp" },
+  { value: "eko", label: "Эко", imageSrc: "/images/configurator/styles-webp/eko.webp" },
+  { value: "klassika", label: "Классика", imageSrc: "/images/configurator/styles-webp/klassika.webp" },
+  { value: "skandi-dzen", label: "Сканди-дзен", imageSrc: "/images/configurator/styles-webp/skandi-dzen.webp" },
+  { value: "loft", label: "Лофт", imageSrc: "/images/configurator/styles-webp/loft.webp" },
+  { value: "kantri", label: "Кантри", imageSrc: "/images/configurator/styles-webp/kantri.webp" },
   {
     value: "sredizemnomore",
     label: "Средиземноморье",
-    imageSrc: "/images/configurator/styles/sredizemnomore.png",
+    imageSrc: "/images/configurator/styles-webp/sredizemnomore.webp",
   },
 ]
 
