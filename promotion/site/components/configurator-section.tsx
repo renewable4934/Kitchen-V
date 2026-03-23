@@ -600,7 +600,7 @@ export function ConfiguratorSection({
                   В какой атмосфере вам хочется находиться на своей кухне?
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Можно выбрать один или несколько стилей. Мы сохраним выбранные варианты и вернемся к ним, если вы
+                  Можно выбрать один или несколько стилей. Сохраним выбранные варианты и вернемся к ним, если вы
                   захотите изменить ответ позже.
                 </p>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
