@@ -90,7 +90,7 @@ const stepItems: StepItem[] = [
   { id: "styles", label: "Стиль" },
   { id: "shape", label: "Форма" },
   { id: "appliances", label: "Техника" },
-  { id: "details", label: "Размер" },
+  { id: "details", label: "Размер и бюджет" },
   { id: "discount", label: "Скидка" },
   { id: "contact", label: "Контакт" },
 ]
@@ -216,6 +216,17 @@ function formatPrice(value: number) {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 })
     .format(Math.round(value))
     .replace(/[\u00A0\u202F]/g, " ")
+}
+
+function formatGroupedDigits(value: string, separator = " ") {
+  const digits = extractDigits(value)
+
+  if (!digits) {
+    return ""
+  }
+
+  const normalized = digits.replace(/^0+(?=\d)/, "")
+  return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, separator)
 }
 
 export function ConfiguratorSection({
@@ -687,6 +698,9 @@ export function ConfiguratorSection({
                     Какого размера кухню вы планируете?
                   </h3>
                   <div className="mt-6 max-w-xl space-y-3">
+                    <label htmlFor="kitchen-size" className="block text-sm font-medium text-foreground">
+                      Размер кухни, м
+                    </label>
                     <input
                       id="kitchen-size"
                       type="text"
@@ -696,10 +710,10 @@ export function ConfiguratorSection({
                       disabled={needsMeasurement}
                       placeholder="Например, 6"
                       className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="Какого размера кухню вы планируете?"
+                      aria-label="Размер кухни, м"
                     />
                     <p className="text-sm text-muted-foreground">
-                      Можно указать дробное значение, если длина известна не точно.
+                      Укажите размер кухни в метрах. Можно указать дробное значение, если длина известна не точно.
                     </p>
                     <label className="inline-flex cursor-pointer items-center gap-3">
                       <input
@@ -718,18 +732,27 @@ export function ConfiguratorSection({
                     Какой желаемый бюджет для вас?
                   </h3>
                   <div className="mt-6 max-w-xl space-y-3">
+                    <label htmlFor="desired-budget" className="block text-sm font-medium text-foreground">
+                      Бюджет, ₽
+                    </label>
                     <input
                       id="desired-budget"
                       type="text"
                       inputMode="numeric"
-                      value={budget}
+                      value={formatGroupedDigits(budget)}
                       onChange={(event) => handleBudgetChange(event.target.value)}
-                      placeholder="Например, 350000"
+                      placeholder="Например, 350 000"
                       className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      aria-label="Какой желаемый бюджет для вас?"
+                      aria-label="Бюджет, ₽"
                     />
+                    {budget ? (
+                      <p className="text-sm font-medium text-foreground" aria-live="polite">
+                        {`${formatGroupedDigits(budget, "\u00A0")} ₽`}
+                      </p>
+                    ) : null}
                     <p className="text-sm text-muted-foreground">
-                      Это поле необязательно. Если пока сомневаетесь, можно оставить его пустым.
+                      Укажите желаемый бюджет в рублях. Это поле необязательно. Если пока сомневаетесь, можно оставить
+                      его пустым.
                     </p>
                   </div>
                 </div>
