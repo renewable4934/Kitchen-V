@@ -259,7 +259,7 @@ export function ConfiguratorSection({
     name: "",
     phone: "",
     consent: false,
-    contactMethod: "call" as ContactMethod,
+    contactMethods: ["call"] as ContactMethod[],
   })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -313,6 +313,29 @@ export function ConfiguratorSection({
   const toggleDiscount = (value: string) => {
     markFormStarted()
     setSelectedDiscounts((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]))
+  }
+
+  const toggleContactMethod = (value: ContactMethod) => {
+    markFormStarted()
+    setContactInfo((prev) => {
+      const isSelected = prev.contactMethods.includes(value)
+
+      if (isSelected) {
+        if (prev.contactMethods.length === 1) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          contactMethods: prev.contactMethods.filter((item) => item !== value),
+        }
+      }
+
+      return {
+        ...prev,
+        contactMethods: [...prev.contactMethods, value],
+      }
+    })
   }
 
   const handleMetersChange = (value: string) => {
@@ -427,13 +450,16 @@ export function ConfiguratorSection({
     const trackingContext = getTrackingContext()
     const formattedPhone = formatPhone(contactInfo.phone)
     const normalizedPhoneDigits = normalizePhoneDigits(contactInfo.phone)
+    const selectedContactMethodLabels = contactMethodOptions
+      .filter((item) => contactInfo.contactMethods.includes(item.value))
+      .map((item) => item.label)
     const payload = {
       funnel_type: "kitchen",
       name: contactInfo.name,
       phone: formattedPhone,
       city: "Москва",
       comment: null,
-      prefer_messenger: contactInfo.contactMethod !== "call",
+      prefer_messenger: contactInfo.contactMethods.some((item) => item !== "call"),
       quiz_answers: {
         styles: styleOptions.filter((item) => selectedStyles.includes(item.value)).map((item) => item.label),
         kitchen_shape: shapeOptions.find((item) => item.value === selectedShape)?.label || null,
@@ -444,7 +470,8 @@ export function ConfiguratorSection({
         discounts: buildDiscountPayload(selectedDiscounts, discountOptions),
         phone: formattedPhone,
         phone_digits: normalizedPhoneDigits || null,
-        contact_method: contactMethodOptions.find((item) => item.value === contactInfo.contactMethod)?.label || null,
+        contact_method: selectedContactMethodLabels[0] || null,
+        contact_methods: selectedContactMethodLabels,
       },
       offer_variant: offerVariant,
       experiment_key: experimentKey,
@@ -816,32 +843,33 @@ export function ConfiguratorSection({
                 <div className="rounded-[1.5rem] bg-secondary/70 px-5 py-6 text-center sm:px-8 sm:py-8">
                   <h3 className="font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
                     {estimatedPrice !== null
-                      ? `Стоимость Вашей кухни примерно ${formatPrice(estimatedPrice)} р`
+                      ? `Стоимость Вашей кухни составляет примерно ${formatPrice(estimatedPrice)} р`
                       : "Стоимость Вашей кухни пока не определена"}
                   </h3>
                   <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
-                    Оставьте контакт — и получите 3D-проект с точной сметой в течение суток.
+                    Пожалуйста, заполните свои контактные данные, чтобы Вам сообщили точную стоимость и прислали Ваш
+                    персональный проект
                   </p>
                 </div>
 
                 <div className="mt-8 space-y-6">
                   <div>
                     <label htmlFor="name" className="mb-1 block text-sm font-medium text-foreground">
-                      {content.fields.nameLabel}
+                      Сообщите, пожалуйста, как можно к Вам обращаться
                     </label>
                     <input
                       id="name"
                       type="text"
                       value={contactInfo.name}
                       onChange={(event) => setContactInfo((prev) => ({ ...prev, name: event.target.value }))}
-                      placeholder={content.fields.namePlaceholder}
+                      placeholder="Имя"
                       className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
 
                   <div>
                     <label htmlFor="phone" className="mb-1 block text-sm font-medium text-foreground">
-                      {content.fields.phoneLabel}
+                      Напишите, пожалуйста, Ваш номер телефона
                     </label>
                     <input
                       id="phone"
@@ -853,28 +881,24 @@ export function ConfiguratorSection({
                       onChange={(event) => handlePhoneChange(event.target.value, event.target.selectionStart)}
                       onCopy={handlePhoneCopy}
                       onPaste={handlePhonePaste}
-                      placeholder={content.fields.phonePlaceholder}
+                      placeholder="Номер"
                       maxLength={16}
-                      aria-describedby="phone-hint"
                       className="w-full rounded-2xl border border-input bg-background px-4 py-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
-                    <p id="phone-hint" className="mt-2 text-sm leading-6 text-muted-foreground">
-                      Подойдет любой привычный ввод: мы сами приведем номер к формату +7 928 123-45-67.
-                    </p>
                   </div>
 
                   <div>
-                    <p className="mb-3 text-sm font-medium text-foreground">Удобный способ связи</p>
+                    <p className="mb-3 text-sm font-medium text-foreground">Удобные способы связи</p>
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       {contactMethodOptions.map((option) => {
-                        const isSelected = contactInfo.contactMethod === option.value
+                        const isSelected = contactInfo.contactMethods.includes(option.value)
                         const Icon = option.Icon
 
                         return (
                           <button
                             key={option.value}
                             type="button"
-                            onClick={() => setContactInfo((prev) => ({ ...prev, contactMethod: option.value }))}
+                            onClick={() => toggleContactMethod(option.value)}
                             aria-pressed={isSelected}
                             className={`flex min-h-28 flex-col justify-between rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                               isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border hover:border-primary/30 hover:bg-primary/5"
