@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import type { ClipboardEvent } from "react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Check,
   ChevronLeft,
@@ -94,6 +94,18 @@ const stepItems: StepItem[] = [
   { id: "discount", label: "Скидка" },
   { id: "contact", label: "Контакт" },
 ]
+
+function preloadImages(imageSources: string[]) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  imageSources.forEach((src) => {
+    const image = new window.Image()
+    image.decoding = "async"
+    image.src = src
+  })
+}
 
 function buildDiscountPayload(discounts: string[], options: DiscountOption[]) {
   return options
@@ -253,6 +265,10 @@ export function ConfiguratorSection({
   const [submitting, setSubmitting] = useState(false)
   const hasTrackedFormStartRef = useRef(false)
   const phoneInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    preloadImages(shapeOptions.map((option) => option.imageSrc))
+  }, [])
 
   const totalSteps = stepItems.length
   const isDiscountStep = currentStep === 4
