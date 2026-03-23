@@ -75,7 +75,7 @@ export function Footer({
             <p
               className={`${footerPhraseFont.className} mt-3 whitespace-nowrap text-[2.25rem] leading-[1.1] tracking-[0.01em] text-foreground sm:text-[2.45rem] lg:text-[2.6rem] xl:text-[2.8rem]`}
             >
-              Свобода полета мечты
+              Свобода полёта мечты
             </p>
           </div>
 
