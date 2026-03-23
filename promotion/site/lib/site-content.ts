@@ -201,7 +201,7 @@ export const fallbackSiteContent: SiteContent = {
   },
   navigation: {
     headerLinks: [
-      { label: "3D-проект для Вас", href: "#configurator" },
+      { label: "3D-проект для вас", href: "#configurator" },
       { label: "Портфолио", href: "#portfolio" },
       { label: "Контракт", href: "#contract" },
       { label: "Кухня и человек", href: "#lifestyle" },
@@ -239,9 +239,9 @@ export const fallbackSiteContent: SiteContent = {
       statValue: "",
     },
     configurator: {
-      eyebrow: "3D-проект для Вас",
+      eyebrow: "3D-проект для вас",
       title: "Созидание замыслов",
-      description: "Благодаря Вашим ответам мы сможем подготовить индивидуальный 3D-проект",
+      description: "Благодаря вашим ответам мы сможем подготовить индивидуальный 3D-проект",
       steps: [
         {
           id: "style",
@@ -426,7 +426,7 @@ export const fallbackSiteContent: SiteContent = {
         { value: "full-prepayment", label: "100% предоплата", discount: "7%", kind: "percent", amount: 7 },
       ],
       contactTitle: "Бесплатный 3D-проект",
-      contactDescription: "Оставьте контакты, и мы подготовим дизайн-проект для Вас",
+      contactDescription: "Оставьте контакты, и мы подготовим дизайн-проект для вас",
       submitButtonLabel: "Отправить заявку",
       submittingLabel: "Отправка...",
       nextButtonLabel: "Далее",
@@ -435,12 +435,12 @@ export const fallbackSiteContent: SiteContent = {
       consentLabel: "Согласие на обработку персональных данных",
       successTitle: "Заявка отправлена!",
       successDescription:
-        "Мы свяжемся с Вами в ближайшее время для обсуждения Вашего проекта. Бесплатный 3D-проект уже в работе.",
+        "Мы свяжемся с вами в ближайшее время для обсуждения вашего проекта. Бесплатный 3D-проект уже в работе.",
       fields: {
         nameLabel: "Имя",
-        namePlaceholder: "Ваше имя",
-        phoneLabel: "Напишите пожалуйста Ваш номер телефона",
-        phonePlaceholder: "Напишите пожалуйста Ваш номер телефона",
+        namePlaceholder: "ваше имя",
+        phoneLabel: "Напишите пожалуйста ваш номер телефона",
+        phonePlaceholder: "Напишите пожалуйста ваш номер телефона",
         commentLabel: "Комментарий",
         commentPlaceholder: "Опишите пожелания к проекту",
       },
@@ -515,7 +515,7 @@ export const fallbackSiteContent: SiteContent = {
           icon: "clock",
           title: "14 дней срок поставки",
           description:
-            "Среднерыночный срок — от 45 до 60 дней. Здесь производство и логистика выстроены так, что Ваша кухня готова за 14.",
+            "Среднерыночный срок — от 45 до 60 дней. Здесь производство и логистика выстроены так, что ваша кухня готова за 14.",
           highlight: "",
         },
         {

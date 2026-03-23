@@ -543,10 +543,10 @@ export function ConfiguratorSection({
             {currentStep === 0 ? (
               <div className="mx-auto max-w-5xl">
                 <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
-                  В какой атмосфере Вам хочется находиться на своей кухне?
+                  В какой атмосфере вам хочется находиться на своей кухне?
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Можно выбрать один или несколько стилей. Мы сохраним выбранные варианты и вернемся к ним, если Вы
+                  Можно выбрать один или несколько стилей. Мы сохраним выбранные варианты и вернемся к ним, если вы
                   захотите изменить ответ позже.
                 </p>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -600,7 +600,7 @@ export function ConfiguratorSection({
             {currentStep === 1 ? (
               <div className="mx-auto max-w-5xl">
                 <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
-                  Какая форма кухни планируется Вами?
+                  Какая форма кухни планируется вами?
                 </h3>
                 <div className="mt-6 grid gap-4 md:grid-cols-3">
                   {shapeOptions.map((option) => {
@@ -644,7 +644,7 @@ export function ConfiguratorSection({
             {currentStep === 2 ? (
               <div className="mx-auto max-w-4xl">
                 <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
-                  Какую бытовую технику Вы хотели бы приобрести и установить с нашей помощью?
+                  Какую бытовую технику вы хотели бы приобрести и установить с нашей помощью?
                 </h3>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {applianceOptions.map((option) => {
@@ -715,7 +715,7 @@ export function ConfiguratorSection({
 
                 <div>
                   <h3 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">
-                    Какой желаемый бюджет для Вас?
+                    Какой желаемый бюджет для вас?
                   </h3>
                   <div className="mt-6 max-w-xl space-y-3">
                     <input
@@ -726,7 +726,7 @@ export function ConfiguratorSection({
                       onChange={(event) => handleBudgetChange(event.target.value)}
                       placeholder="Например, 350000"
                       className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      aria-label="Какой желаемый бюджет для Вас?"
+                      aria-label="Какой желаемый бюджет для вас?"
                     />
                     <p className="text-sm text-muted-foreground">
                       Это поле необязательно. Если пока сомневаетесь, можно оставить его пустым.

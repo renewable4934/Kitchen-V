@@ -10,6 +10,7 @@ values (
     "siteId": "main",
     "brandName": "Пегас",
     "brandTagline": "Кухни, которые освобождают пространство и время.",
+    "contentVersion": "landing-literal-2026-03-11",
     "contactPhone": "+7 (800) 000-00-00",
     "email": "info@pegas-kitchen.ru",
     "address": "Москва, Россия",
@@ -93,15 +94,15 @@ values
   'default',
   true,
   $${
-    "eyebrow": "3D-проект для Вас",
+    "eyebrow": "3D-проект для вас",
     "title": "Созидание замыслов",
-    "description": "Благодаря Вашим ответам мы сможем подготовить индивидуальный 3D проект",
+    "description": "Благодаря вашим ответам мы сможем подготовить индивидуальный 3D проект",
     "contactTitle": "Бесплатный 3D-проект",
-    "contactDescription": "Оставьте контакты, и мы подготовим дизайн-проект для Вас",
+    "contactDescription": "Оставьте контакты, и мы подготовим дизайн-проект для вас",
     "discountTitle": "Соберите скидку",
     "discountDescription": "Выберите подходящие варианты для дополнительной скидки",
     "successTitle": "Заявка отправлена!",
-    "successDescription": "Мы свяжемся с Вами в ближайшее время для обсуждения Вашего проекта. Бесплатный 3D-проект уже в работе.",
+    "successDescription": "Мы свяжемся с вами в ближайшее время для обсуждения вашего проекта. Бесплатный 3D-проект уже в работе.",
     "consentLabel": "Согласие на обработку персональных данных",
     "messengerLabel": "Связаться через мессенджер",
     "nextButtonLabel": "Далее",
@@ -112,7 +113,7 @@ values
       "nameLabel": "Имя",
       "phoneLabel": "Телефон",
       "commentLabel": "Комментарий",
-      "namePlaceholder": "Ваше имя",
+      "namePlaceholder": "ваше имя",
       "phonePlaceholder": "+7 (999) 999-99-99",
       "commentPlaceholder": "Опишите пожелания к проекту"
     },
@@ -400,7 +401,7 @@ where site_id = 'main';
 
 insert into public.cms_navigation (site_id, area, label, href, sort_order, is_enabled)
 values
-('main', 'header', '3D-проект для Вас', '#configurator', 10, true),
+('main', 'header', '3D-проект для вас', '#configurator', 10, true),
 ('main', 'header', 'Портфолио', '#portfolio', 20, true),
 ('main', 'header', 'Контракт', '#contract', 30, true),
 ('main', 'header', 'Кухня и человек', '#lifestyle', 40, true),
