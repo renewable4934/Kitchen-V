@@ -47,7 +47,6 @@ export function Footer({
   const safeLinks = Array.isArray(links) ? links : []
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`
   const addressHref = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`
-  const brandLabel = brandName.toUpperCase()
   const whatsappHref =
     whatsappPhone && whatsappPhone.trim()
       ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`
@@ -66,11 +65,6 @@ export function Footer({
                 height={374}
                 className="h-auto w-[8.75rem] sm:w-[9.5rem] lg:w-[10.25rem]"
               />
-              <span
-                className={`${footerPhraseFont.className} translate-y-[0.04em] text-[2.1rem] leading-none font-medium uppercase tracking-[0.045em] text-[#2c414c] sm:text-[2.4rem] lg:text-[2.6rem]`}
-              >
-                {brandLabel}
-              </span>
             </div>
             <p
               className={`${footerPhraseFont.className} mt-3 whitespace-nowrap text-[2.25rem] leading-[1.1] tracking-[0.01em] text-foreground sm:text-[2.45rem] lg:text-[2.6rem] xl:text-[2.8rem]`}
