@@ -77,6 +77,8 @@ const applianceOptions = [
   "Холодильник",
   "Вытяжка",
   "Микроволновка",
+  "Встроенная кофемашина",
+  "Винный шкаф",
 ]
 
 const contactMethodOptions: ContactMethodOption[] = [
@@ -698,7 +700,7 @@ export function ConfiguratorSection({
             {currentStep === 2 ? (
               <div className="mx-auto max-w-4xl">
                 <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
-                  Какую бытовую технику вы хотели бы приобрести и установить с нашей помощью?
+                  Какую бытовую технику вы хотели бы приобрести и установить?
                 </h3>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {applianceOptions.map((option) => {
