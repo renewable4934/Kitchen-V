@@ -282,7 +282,7 @@ values
   'default',
   true,
   $${
-    "eyebrow": "3D-проект для вас",
+    "eyebrow": "3D-проект",
     "title": "Созидание замыслов",
     "description": "Благодаря вашим ответам сможем подготовить индивидуальный 3D проект",
     "steps": [
@@ -518,7 +518,7 @@ values
   'default',
   true,
   $${
-    "eyebrow": "Кухня и человек",
+    "eyebrow": "Кухня и жизнь",
     "title": "Больше, чем мебель",
     "description": "Кухня — это место, где начинается и заканчивается каждый день. Простор для жизни, творчества и любви.",
     "items": [
@@ -567,16 +567,16 @@ set sort_order = excluded.sort_order,
 
 insert into public.cms_navigation (site_id, area, label, href, sort_order, is_enabled)
 values
-  ('main', 'header', '3D-проект для вас', '#configurator', 10, true),
+  ('main', 'header', '3D-проект', '#configurator', 10, true),
   ('main', 'header', 'Портфолио', '#portfolio', 20, true),
   ('main', 'header', 'Контракт', '#contract', 30, true),
-  ('main', 'header', 'Кухня и человек', '#lifestyle', 40, true),
+  ('main', 'header', 'Кухня и жизнь', '#lifestyle', 40, true),
   ('main', 'header_cta', 'Получить персональный расчет', '#configurator', 50, true),
   ('main', 'footer', 'Главная', '#hero', 10, true),
   ('main', 'footer', '3D-проект', '#configurator', 20, true),
   ('main', 'footer', 'Портфолио', '#portfolio', 30, true),
   ('main', 'footer', 'Контракт', '#contract', 40, true),
-  ('main', 'footer', 'Кухня и человек', '#lifestyle', 50, true)
+  ('main', 'footer', 'Кухня и жизнь', '#lifestyle', 50, true)
 on conflict (site_id, area, href, label) do update
 set sort_order = excluded.sort_order,
     is_enabled = excluded.is_enabled,

@@ -175,7 +175,7 @@ export function ConfiguratorSection() {
       <div className="mx-auto max-w-3xl px-6">
         <div className="mb-12 text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            3D проект для вас
+            3D-проект
           </p>
           <h2 className="mt-3 font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             Создайте свою кухню

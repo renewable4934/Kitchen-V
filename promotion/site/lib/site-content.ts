@@ -201,17 +201,17 @@ export const fallbackSiteContent: SiteContent = {
   },
   navigation: {
     headerLinks: [
-      { label: "3D-проект для вас", href: "#configurator" },
+      { label: "3D-проект", href: "#configurator" },
       { label: "Портфолио", href: "#portfolio" },
       { label: "Контракт", href: "#contract" },
-      { label: "Кухня и человек", href: "#lifestyle" },
+      { label: "Кухня и жизнь", href: "#lifestyle" },
     ],
     footerLinks: [
       { label: "Главная", href: "#hero" },
       { label: "3D-проект", href: "#configurator" },
       { label: "Портфолио", href: "#portfolio" },
       { label: "Контракт", href: "#contract" },
-      { label: "Кухня и человек", href: "#lifestyle" },
+      { label: "Кухня и жизнь", href: "#lifestyle" },
     ],
     headerCta: {
       label: "Получить персональный расчет",
@@ -239,7 +239,7 @@ export const fallbackSiteContent: SiteContent = {
       statValue: "",
     },
     configurator: {
-      eyebrow: "3D-проект для вас",
+      eyebrow: "3D-проект",
       title: "Созидание замыслов",
       description: "Благодаря вашим ответам сможем подготовить индивидуальный 3D-проект",
       steps: [
@@ -541,7 +541,7 @@ export const fallbackSiteContent: SiteContent = {
       ],
     },
     lifestyle: {
-      eyebrow: "Кухня и человек",
+      eyebrow: "Кухня и жизнь",
       title: "Больше, чем мебель",
       description:
         "Кухня — это место, где начинается и заканчивается каждый день. Простор для жизни, творчества и любви.",
