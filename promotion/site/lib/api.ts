@@ -41,6 +41,58 @@ function safeJsonObject(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {}
 }
 
+function displayValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return "-"
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    return trimmed || "-"
+  }
+
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return "[unserializable]"
+    }
+  }
+
+  return String(value)
+}
+
+function buildBitrixSourceDescription(lead: Record<string, unknown>) {
+  return [
+    `Воронка: ${displayValue(lead.funnel_type)}`,
+    `Страница: ${displayValue(lead.landing_url)}`,
+    `UTM source: ${displayValue(lead.utm_source)}`,
+    `UTM medium: ${displayValue(lead.utm_medium)}`,
+    `UTM campaign: ${displayValue(lead.utm_campaign)}`,
+    `UTM content: ${displayValue(lead.utm_content)}`,
+    `UTM term: ${displayValue(lead.utm_term)}`,
+    `YCLID: ${displayValue(lead.yclid)}`,
+    `VKCLID: ${displayValue(lead.vkclid)}`,
+    `Client ID: ${displayValue(lead.client_id)}`,
+    `Offer variant: ${displayValue(lead.offer_variant)}`,
+    `Experiment key: ${displayValue(lead.experiment_key)}`,
+    `Quiz: ${displayValue(lead.quiz_answers)}`,
+  ].join("\n")
+}
+
+function buildBitrixComments(lead: Record<string, unknown>) {
+  const lines = [
+    `Создано: ${displayValue(lead.timestamp)}`,
+    `Lead ID: ${displayValue(lead.id)}`,
+    `Предпочитает мессенджер: ${lead.prefer_messenger ? "Да" : "Нет"}`,
+    `Комментарий клиента: ${displayValue(lead.comment)}`,
+    `IP: ${displayValue(lead.ip)}`,
+    `User-Agent: ${displayValue(lead.user_agent)}`,
+  ]
+
+  return lines.join("\n")
+}
+
 function getRequestMeta(request: Request) {
   return {
     ip:
@@ -168,28 +220,46 @@ async function pushLeadToCrm(lead: Record<string, unknown>) {
   }
 
   if (bitrixWebhookUrl) {
+    const bitrixPayload = {
+      fields: {
+        TITLE: `Заявка с сайта (${lead.funnel_type || "kitchen"})`,
+        NAME: lead.name,
+        PHONE: [{ VALUE: normalizePhone(String(lead.phone || "")), VALUE_TYPE: "WORK" }],
+        CITY: lead.city,
+        SOURCE_ID: "WEB",
+        SOURCE_DESCRIPTION: buildBitrixSourceDescription(lead),
+        COMMENTS: buildBitrixComments(lead),
+      },
+      params: {
+        REGISTER_SONET_EVENT: "Y",
+      },
+    }
+
     const response = await fetch(bitrixWebhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fields: {
-          TITLE: `Заявка с сайта (${lead.funnel_type || "kitchen"})`,
-          NAME: lead.name,
-          PHONE: [{ VALUE: normalizePhone(String(lead.phone || "")), VALUE_TYPE: "WORK" }],
-          CITY: lead.city,
-          SOURCE_ID: "WEB",
-          SOURCE_DESCRIPTION: JSON.stringify(lead.quiz_answers || {}),
-          COMMENTS: `Создано: ${lead.timestamp}`,
-        },
-        params: {
-          REGISTER_SONET_EVENT: "Y",
-        },
-      }),
+      body: JSON.stringify(bitrixPayload),
     })
 
-    const data = await response.json().catch(() => ({}))
+    const responseText = await response.text()
+    const data = responseText
+      ? (() => {
+          try {
+            return JSON.parse(responseText)
+          } catch {
+            return {}
+          }
+        })()
+      : {}
     if (!response.ok || data?.error) {
-      throw new Error(`Bitrix24 webhook failed: ${response.status}`)
+      const errorDetails =
+        typeof data?.error_description === "string"
+          ? data.error_description
+          : typeof data?.error === "string"
+            ? data.error
+            : responseText || "unknown_error"
+
+      throw new Error(`Bitrix24 webhook failed: ${response.status} ${errorDetails}`)
     }
 
     return { delivered: true, channel: "bitrix24" }
