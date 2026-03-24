@@ -51,9 +51,9 @@ type StepItem = {
 const styleOptions: StyleOption[] = [
   { value: "neoklassika", label: "Неоклассика", imageSrc: "/images/configurator/styles-webp/neoklassika.webp" },
   { value: "minimalizm", label: "Минимализм", imageSrc: "/images/configurator/styles-webp/minimalizm.webp" },
-  { value: "eko", label: "Эко", imageSrc: "/images/configurator/styles-webp/eko.webp" },
-  { value: "klassika", label: "Классика", imageSrc: "/images/configurator/styles-webp/klassika.webp" },
   { value: "skandi-dzen", label: "Сканди-дзен", imageSrc: "/images/configurator/styles-webp/skandi-dzen.webp" },
+  { value: "klassika", label: "Классика", imageSrc: "/images/configurator/styles-webp/klassika.webp" },
+  { value: "eko", label: "Эко", imageSrc: "/images/configurator/styles-webp/eko.webp" },
   { value: "loft", label: "Лофт", imageSrc: "/images/configurator/styles-webp/loft.webp" },
   { value: "kantri", label: "Кантри", imageSrc: "/images/configurator/styles-webp/kantri.webp" },
   {
