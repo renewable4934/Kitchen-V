@@ -820,9 +820,11 @@ export function ConfiguratorSection({
                           : "border-border hover:border-primary/30 hover:bg-primary/5"
                       }`}
                     >
-                      <span className="text-base font-medium text-foreground">{option.label}</span>
+                      <span className="min-w-0 flex-1 pr-4 text-base font-medium leading-snug text-foreground">
+                        {option.label}
+                      </span>
                       <span
-                        className={`rounded-full px-3 py-1 text-sm font-medium ${
+                        className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${
                           selectedDiscounts.includes(option.value)
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground"

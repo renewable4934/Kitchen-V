@@ -184,13 +184,13 @@ values
         ]
       }
     ],
-    "discountTitle": "Соберите скидку",
+    "discountTitle": "Если Вы хотели бы получить скидку, здесь можно выбрать способ её получения.",
     "discountDescription": "Выберите подходящие варианты для дополнительной скидки",
     "discountOptions": [
-      { "value": "video-review", "label": "Видеоотзыв", "discount": "3%", "kind": "percent", "amount": 3 },
-      { "value": "standard-project", "label": "Типовой проект", "discount": "5%", "kind": "percent", "amount": 5 },
-      { "value": "kitchen-wardrobe", "label": "Кухня + шкаф", "discount": "4000 ₽", "kind": "fixed", "amount": 4000 },
-      { "value": "full-prepayment", "label": "100% предоплата", "discount": "7%", "kind": "percent", "amount": 7 }
+      { "value": "video-review", "label": "Оставить видеоотзыв о компании", "discount": "3%", "kind": "percent", "amount": 3 },
+      { "value": "standard-project", "label": "Оставить типовой проект", "discount": "5%", "kind": "percent", "amount": 5 },
+      { "value": "kitchen-wardrobe", "label": "Заказать мебель дополнительно к кухне", "discount": "2%", "kind": "percent", "amount": 2 },
+      { "value": "full-prepayment", "label": "Внести предоплату в размере 100%", "discount": "7%", "kind": "percent", "amount": 7 }
     ],
     "contactTitle": "Бесплатный 3D-проект",
     "contactDescription": "Оставьте контакты, и мы подготовим дизайн-проект для вас",
