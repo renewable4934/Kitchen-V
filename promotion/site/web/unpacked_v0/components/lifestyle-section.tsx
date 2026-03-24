@@ -19,7 +19,7 @@ const lifestyleItems = [
   {
     image: "/images/lifestyle-creative.jpg",
     title: "Творчество",
-    description: "Ваша кухня — лаборатория для кулинарных экспериментов и новых идей",
+    description: "ваша кухня — лаборатория для кулинарных экспериментов и новых идей",
   },
 ]
 

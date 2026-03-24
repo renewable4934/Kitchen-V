@@ -843,11 +843,11 @@ export function ConfiguratorSection({
                 <div className="rounded-[1.5rem] bg-secondary/70 px-5 py-6 text-center sm:px-8 sm:py-8">
                   <h3 className="font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
                     {estimatedPrice !== null
-                      ? `Стоимость Вашей кухни составляет примерно ${formatPrice(estimatedPrice)} р`
-                      : "Стоимость Вашей кухни пока не определена"}
+                      ? `Стоимость вашей кухни составляет примерно ${formatPrice(estimatedPrice)} р`
+                      : "Стоимость вашей кухни пока не определена"}
                   </h3>
                   <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
-                    Пожалуйста, заполните свои контактные данные, чтобы Вам сообщили точную стоимость и прислали Ваш
+                    Пожалуйста, заполните свои контактные данные, чтобы вам сообщили точную стоимость и прислали ваш
                     персональный проект
                   </p>
                 </div>
@@ -855,7 +855,7 @@ export function ConfiguratorSection({
                 <div className="mt-8 space-y-6">
                   <div>
                     <label htmlFor="name" className="mb-1 block text-sm font-medium text-foreground">
-                      Сообщите, пожалуйста, как можно к Вам обращаться
+                      Сообщите, пожалуйста, как можно к вам обращаться
                     </label>
                     <input
                       id="name"
@@ -869,7 +869,7 @@ export function ConfiguratorSection({
 
                   <div>
                     <label htmlFor="phone" className="mb-1 block text-sm font-medium text-foreground">
-                      Напишите, пожалуйста, Ваш номер телефона
+                      Напишите, пожалуйста, ваш номер телефона
                     </label>
                     <input
                       id="phone"

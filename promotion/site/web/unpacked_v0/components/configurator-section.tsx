@@ -162,7 +162,7 @@ export function ConfiguratorSection() {
             Заявка отправлена!
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Мы свяжемся с Вами в ближайшее время для обсуждения Вашего проекта.
+            Мы свяжемся с вами в ближайшее время для обсуждения вашего проекта.
             Бесплатный 3D-проект уже в работе.
           </p>
         </div>
@@ -175,7 +175,7 @@ export function ConfiguratorSection() {
       <div className="mx-auto max-w-3xl px-6">
         <div className="mb-12 text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            3D проект для Вас
+            3D проект для вас
           </p>
           <h2 className="mt-3 font-serif text-4xl font-bold tracking-tight text-foreground lg:text-5xl text-balance">
             Создайте свою кухню
@@ -279,7 +279,7 @@ export function ConfiguratorSection() {
                 Бесплатный 3D-проект
               </h3>
               <p className="mt-1 text-muted-foreground">
-                Оставьте контакты, и мы подготовим дизайн-проект для Вас
+                Оставьте контакты, и мы подготовим дизайн-проект для вас
               </p>
               <div className="mt-6 flex flex-col gap-4">
                 <div>
@@ -291,7 +291,7 @@ export function ConfiguratorSection() {
                     type="text"
                     value={contactInfo.name}
                     onChange={(e) => setContactInfo((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Ваше имя"
+                    placeholder="ваше имя"
                     className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
