@@ -810,7 +810,7 @@ export function ConfiguratorSection({
                 {content.discountDescription ? (
                   <p className="mt-2 max-w-2xl text-muted-foreground">{content.discountDescription}</p>
                 ) : null}
-                <div className={`${content.discountDescription ? "mt-6" : "mt-4"} flex flex-col gap-3`}>
+                <div className={`${content.discountDescription ? "mt-6" : "mt-[3.5rem]"} flex flex-col gap-3`}>
                   {discountOptions.map((option) => (
                     <button
                       key={option.value}
