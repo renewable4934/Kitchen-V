@@ -838,10 +838,6 @@ export function ConfiguratorSection({
 
             {isContactStep ? (
               <div className="mx-auto max-w-4xl">
-                <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <Check className="h-10 w-10" />
-                </div>
-
                 <div className="rounded-[1.5rem] bg-secondary/70 px-5 py-6 text-center sm:px-8 sm:py-8">
                   <h3 className="font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
                     {estimatedPrice !== null
