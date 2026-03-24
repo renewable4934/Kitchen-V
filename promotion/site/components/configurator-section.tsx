@@ -807,8 +807,10 @@ export function ConfiguratorSection({
             {isDiscountStep ? (
               <div className="mx-auto max-w-3xl">
                 <h3 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">{content.discountTitle}</h3>
-                <p className="mt-2 max-w-2xl text-muted-foreground">{content.discountDescription}</p>
-                <div className="mt-6 flex flex-col gap-3">
+                {content.discountDescription ? (
+                  <p className="mt-2 max-w-2xl text-muted-foreground">{content.discountDescription}</p>
+                ) : null}
+                <div className={`${content.discountDescription ? "mt-6" : "mt-4"} flex flex-col gap-3`}>
                   {discountOptions.map((option) => (
                     <button
                       key={option.value}

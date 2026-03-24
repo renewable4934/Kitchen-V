@@ -397,7 +397,7 @@ values
       }
     ],
     "discountTitle": "Если Вы хотели бы получить скидку, здесь можно выбрать способ её получения.",
-    "discountDescription": "Выберите подходящие варианты для дополнительной скидки",
+    "discountDescription": "",
     "discountOptions": [
       { "value": "video-review", "label": "Оставить видеоотзыв о компании", "discount": "3%", "kind": "percent", "amount": 3 },
       { "value": "standard-project", "label": "Оставить типовой проект", "discount": "5%", "kind": "percent", "amount": 5 },
