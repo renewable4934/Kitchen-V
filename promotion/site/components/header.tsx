@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import Image from "next/image"
 import { Cormorant_Garamond } from "next/font/google"
 import { useEffect, useState } from "react"
@@ -23,6 +25,7 @@ type HeaderProps = {
 
 export function Header({ brandName, links, cta, offerVariant, experimentKey }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname()
   const safeLinks = Array.isArray(links) ? links : []
   const ctaHref = cta?.href || "#configurator"
   const ctaLabel = cta?.label || ""
@@ -60,10 +63,19 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
     })
   }
 
+  const handleBrandClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    setMobileOpen(false)
+
+    if (pathname === "/") {
+      event.preventDefault()
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" })
+    }
+  }
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <a href="/" className="flex items-center gap-2.5" aria-label={brandName}>
+        <Link href="/" onClick={handleBrandClick} className="flex items-center gap-2.5" aria-label={brandName}>
           <Image
             src="/images/pegas-logo.png"
             alt=""
@@ -77,7 +89,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
           >
             {brandLabel}
           </span>
-        </a>
+        </Link>
 
         <nav className="hidden items-center gap-[44px] md:flex">
           {safeLinks.map((link) => (
