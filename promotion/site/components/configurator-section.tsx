@@ -727,7 +727,7 @@ export function ConfiguratorSection({
                   </h3>
                   <div className="mt-6 max-w-xl space-y-3">
                     <label htmlFor="kitchen-size" className="block text-sm font-medium text-foreground">
-                      Размер кухни, пог. м
+                      Размер кухни, погонный метр
                     </label>
                     <input
                       id="kitchen-size"

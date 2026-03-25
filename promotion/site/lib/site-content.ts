@@ -533,7 +533,7 @@ export const fallbackSiteContent: SiteContent = {
         },
         {
           icon: "banknote",
-          title: "70 000 ₽ / пог. метр",
+          title: "70 000 ₽ / погонный метр",
           description:
             "В цену уже входят корпуса, фасады, влагостойкая столешница, фурнитура и сборка. Всё прозрачно — без скрытых платежей.",
           highlight: "",
