@@ -601,10 +601,6 @@ export function ConfiguratorSection({
                 <h3 className="max-w-3xl font-serif text-2xl font-bold text-foreground sm:text-3xl">
                   В какой атмосфере вам хочется находиться на своей кухне?
                 </h3>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Можно выбрать один или несколько стилей. Сохраним выбранные варианты и вернемся к ним, если вы
-                  захотите изменить ответ позже.
-                </p>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {styleOptions.map((option) => {
                     const isSelected = selectedStyles.includes(option.value)
