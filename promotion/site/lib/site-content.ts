@@ -417,7 +417,7 @@ export const fallbackSiteContent: SiteContent = {
           ],
         },
       ],
-      discountTitle: "Если Вы хотели бы получить скидку, здесь можно выбрать способы её получения.",
+      discountTitle: "Если вы хотели бы получить скидку, здесь можно выбрать способы её получения.",
       discountDescription: "",
       discountOptions: [
         { value: "video-review", label: "Оставить видеоотзыв о компании", discount: "3%", kind: "percent", amount: 3 },
