@@ -222,7 +222,7 @@ export const fallbackSiteContent: SiteContent = {
   sections: {
     hero: {
       eyebrow: "",
-      title: "Просто выбрать.\nЛегко жить",
+      title: "Просто выбрать.\nЛегко жить.",
       description: "",
       tagline: "Кухни, которые освобождают пространство и время",
       primaryCta: {
