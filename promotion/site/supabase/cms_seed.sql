@@ -188,7 +188,7 @@ values
     "discountDescription": "",
     "discountOptions": [
       { "value": "video-review", "label": "Оставить видеоотзыв о компании", "discount": "3%", "kind": "percent", "amount": 3 },
-      { "value": "standard-project", "label": "Оставить типовой проект", "discount": "5%", "kind": "percent", "amount": 5 },
+      { "value": "standard-project", "label": "Выбрать типовой проект", "discount": "5%", "kind": "percent", "amount": 5 },
       { "value": "kitchen-wardrobe", "label": "Заказать мебель дополнительно к кухне", "discount": "2%", "kind": "percent", "amount": 2 },
       { "value": "full-prepayment", "label": "Внести предоплату в размере 100%", "discount": "7%", "kind": "percent", "amount": 7 }
     ],

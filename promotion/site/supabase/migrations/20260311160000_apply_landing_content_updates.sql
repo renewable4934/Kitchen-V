@@ -126,7 +126,7 @@ values
         "amount": 3
       },
       {
-        "label": "Оставить типовой проект",
+        "label": "Выбрать типовой проект",
         "value": "standard-project",
         "discount": "5%",
         "kind": "percent",
