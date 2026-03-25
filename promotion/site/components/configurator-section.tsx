@@ -799,23 +799,14 @@ export function ConfiguratorSection({
                       key={option.value}
                       type="button"
                       onClick={() => toggleDiscount(option.value)}
-                      className={`flex min-h-16 items-center justify-between rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                      className={`flex min-h-16 items-center rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                         selectedDiscounts.includes(option.value)
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : "border-border hover:border-primary/30 hover:bg-primary/5"
                       }`}
                     >
-                      <span className="min-w-0 flex-1 pr-4 text-base font-medium leading-snug text-foreground">
+                      <span className="min-w-0 flex-1 text-base font-medium leading-snug text-foreground">
                         {option.label}
-                      </span>
-                      <span
-                        className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${
-                          selectedDiscounts.includes(option.value)
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {`-${option.discount}`}
                       </span>
                     </button>
                   ))}
