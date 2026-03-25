@@ -740,9 +740,6 @@ export function ConfiguratorSection({
                       className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="Размер кухни, м"
                     />
-                    <p className="text-sm text-muted-foreground">
-                      Укажите размер кухни в метрах. Можно указать дробное значение, если длина известна не точно.
-                    </p>
                     <label className="inline-flex cursor-pointer items-center gap-3">
                       <input
                         type="checkbox"
@@ -778,10 +775,6 @@ export function ConfiguratorSection({
                         {`${formatGroupedDigits(budget, "\u00A0")} ₽`}
                       </p>
                     ) : null}
-                    <p className="text-sm text-muted-foreground">
-                      Укажите желаемый бюджет в рублях. Это поле необязательно. Если пока сомневаетесь, можно оставить
-                      его пустым.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -819,7 +812,7 @@ export function ConfiguratorSection({
                 <div className="rounded-[1.5rem] bg-secondary/70 px-5 py-6 text-center sm:px-8 sm:py-8">
                   <h3 className="font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
                     {estimatedPrice !== null
-                      ? `Стоимость вашей кухни составляет примерно ${formatPrice(estimatedPrice)} р`
+                      ? `Стоимость вашей кухни составляет примерно ${formatPrice(estimatedPrice)} ₽`
                       : "Стоимость вашей кухни пока не определена"}
                   </h3>
                   <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
