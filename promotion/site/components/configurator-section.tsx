@@ -277,7 +277,7 @@ export function ConfiguratorSection({
   const isContactStep = currentStep === 5
   const progress = ((currentStep + 1) / totalSteps) * 100
   const parsedMeters = meters.trim() ? Number(meters.replace(",", ".")) : null
-  const hasValidMeters = parsedMeters !== null && Number.isFinite(parsedMeters) && parsedMeters > 0
+  const hasValidMeters = parsedMeters !== null && Number.isFinite(parsedMeters) && parsedMeters >= 0
   const estimatedPrice = hasValidMeters && !needsMeasurement ? parsedMeters * 70000 : null
 
   const markFormStarted = () => {
@@ -727,7 +727,7 @@ export function ConfiguratorSection({
                   </h3>
                   <div className="mt-6 max-w-xl space-y-3">
                     <label htmlFor="kitchen-size" className="block text-sm font-medium text-foreground">
-                      Размер кухни, м
+                      Размер кухни, пог. м
                     </label>
                     <input
                       id="kitchen-size"
