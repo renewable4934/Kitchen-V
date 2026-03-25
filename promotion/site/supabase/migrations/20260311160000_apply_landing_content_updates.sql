@@ -69,7 +69,7 @@ values
   true,
   $${
     "eyebrow": "",
-    "title": "Просто выбрать\nЛегко жить",
+    "title": "Просто выбрать.\nЛегко жить",
     "description": "",
     "tagline": "Кухни, которые освобождают пространство и время",
     "imageKey": "hero-kitchen",
