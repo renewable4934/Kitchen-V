@@ -414,31 +414,16 @@ export function ConfiguratorSection({
   }
 
   const canProceed = () => {
-    if (currentStep === 0) {
-      return selectedStyles.length > 0
-    }
-
-    if (currentStep === 1) {
-      return Boolean(selectedShape)
-    }
-
-    if (currentStep === 2) {
-      return selectedAppliances.length > 0
-    }
-
-    if (currentStep === 3) {
-      return hasValidMeters || needsMeasurement
-    }
-
-    if (isDiscountStep) {
-      return true
-    }
-
     if (isContactStep) {
       return Boolean(contactInfo.name.trim() && isPhoneComplete(contactInfo.phone) && contactInfo.consent)
     }
 
     return true
+  }
+
+  const handleStepSelect = (stepIndex: number) => {
+    markFormStarted()
+    setCurrentStep(stepIndex)
   }
 
   const handleNext = () => {
@@ -560,9 +545,11 @@ export function ConfiguratorSection({
               const isDone = index < currentStep
 
               return (
-                <div
+                <button
                   key={step.id}
-                  className={`rounded-2xl border px-3 py-3 text-center transition-all ${
+                  type="button"
+                  onClick={() => handleStepSelect(index)}
+                  className={`rounded-2xl border px-3 py-3 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                     isDone
                       ? "border-primary bg-primary text-primary-foreground"
                       : isActive
@@ -588,7 +575,7 @@ export function ConfiguratorSection({
                   >
                     {step.label}
                   </span>
-                </div>
+                </button>
               )
             })}
           </div>
