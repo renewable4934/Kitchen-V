@@ -3,7 +3,7 @@
 import { unstable_noStore as noStore } from "next/cache"
 
 import { fallbackSiteContent, type CmsAsset, type SiteContent } from "@/lib/site-content"
-import { getSupabaseCmsClient, isSupabaseCmsConfigured } from "@/lib/supabase"
+import { getSupabasePublicEnv, isSupabaseCmsConfigured } from "@/lib/supabase"
 
 type JsonRecord = Record<string, unknown>
 
@@ -176,34 +176,68 @@ function buildNavigation(rows: Array<{ area: string; label: string; href: string
   }
 }
 
+async function fetchCmsRows<T>(path: string) {
+  const { url, publishableKey } = getSupabasePublicEnv()
+
+  if (!url || !publishableKey) {
+    return {
+      data: null as T | null,
+      error: { message: "Supabase CMS is not configured" },
+    }
+  }
+
+  const response = await fetch(`${url}/rest/v1/${path}`, {
+    headers: {
+      apikey: publishableKey,
+      authorization: `Bearer ${publishableKey}`,
+      accept: "application/json",
+    },
+    cache: "no-store",
+    next: { revalidate: 0 },
+  })
+
+  if (!response.ok) {
+    return {
+      data: null as T | null,
+      error: { message: `${response.status} ${response.statusText}` },
+    }
+  }
+
+  return {
+    data: (await response.json()) as T,
+    error: null as { message: string } | null,
+  }
+}
+
 export async function loadSiteContent(): Promise<SiteContent> {
   noStore()
   const fallback = cloneFallback()
-  const client = getSupabaseCmsClient()
 
-  if (!client) {
+  if (!isSupabaseCmsConfigured()) {
     return fallback
   }
 
   const [siteResult, pageResult, sectionResult, navigationResult, assetResult] = await Promise.all([
-    client.from("cms_sites").select("id, settings").eq("id", "main").maybeSingle(),
-    client.from("cms_pages").select("slug, meta, published").eq("slug", "home").eq("published", true).maybeSingle(),
-    client
-      .from("cms_sections")
-      .select("section_key, content, is_enabled")
-      .eq("site_id", "main")
-      .eq("page_slug", "home")
-      .eq("variant_key", "default")
-      .eq("is_enabled", true)
-      .order("sort_order", { ascending: true }),
-    client
-      .from("cms_navigation")
-      .select("area, label, href")
-      .eq("site_id", "main")
-      .eq("is_enabled", true)
-      .order("sort_order", { ascending: true }),
-    client.from("cms_assets").select("asset_key, public_url, alt").eq("site_id", "main"),
+    fetchCmsRows<Array<{ id: string; settings: unknown }>>("cms_sites?select=id,settings&id=eq.main&limit=1"),
+    fetchCmsRows<Array<{ slug: string; meta: unknown; published: boolean }>>(
+      "cms_pages?select=slug,meta,published&slug=eq.home&published=eq.true&limit=1",
+    ),
+    fetchCmsRows<Array<{ section_key: string; content: unknown; is_enabled: boolean }>>(
+      "cms_sections?select=section_key,content,is_enabled&site_id=eq.main&page_slug=eq.home&variant_key=eq.default&is_enabled=eq.true&order=sort_order.asc",
+    ),
+    fetchCmsRows<Array<{ area: string; label: string; href: string }>>(
+      "cms_navigation?select=area,label,href&site_id=eq.main&is_enabled=eq.true&order=sort_order.asc",
+    ),
+    fetchCmsRows<Array<{ asset_key: string; public_url: string; alt: string }>>(
+      "cms_assets?select=asset_key,public_url,alt&site_id=eq.main",
+    ),
   ])
+
+  const siteData = siteResult.data?.[0] || null
+  const pageData = pageResult.data?.[0] || null
+  const sectionData = sectionResult.data || []
+  const navigationData = navigationResult.data || []
+  const assetData = assetResult.data || []
 
   const errors = [
     siteResult.error?.message,
@@ -217,27 +251,27 @@ export async function loadSiteContent(): Promise<SiteContent> {
   merged.cmsEnabled = true
   merged.source = errors.length === 0 ? "supabase" : "local_fallback"
   merged.diagnostics = {
-    siteSource: siteResult.data ? "supabase" : "local_fallback",
-    pageSource: pageResult.data ? "supabase" : "local_fallback",
-    sectionSource: sectionResult.data?.length ? "supabase" : "local_fallback",
-    navigationSource: navigationResult.data?.length ? "supabase" : "local_fallback",
-    assetSource: assetResult.data?.length ? "supabase" : "local_fallback",
+    siteSource: siteData ? "supabase" : "local_fallback",
+    pageSource: pageData ? "supabase" : "local_fallback",
+    sectionSource: sectionData.length ? "supabase" : "local_fallback",
+    navigationSource: navigationData.length ? "supabase" : "local_fallback",
+    assetSource: assetData.length ? "supabase" : "local_fallback",
     errors,
   }
 
-  if (siteResult.data?.settings) {
-    merged.site = deepMerge(merged.site, siteResult.data.settings)
+  if (siteData?.settings) {
+    merged.site = deepMerge(merged.site, siteData.settings)
   }
 
-  if (pageResult.data?.meta) {
+  if (pageData?.meta) {
     merged.page = deepMerge(merged.page, {
-      slug: pageResult.data.slug,
-      ...pageResult.data.meta,
+      slug: pageData.slug,
+      ...pageData.meta,
     })
   }
 
-  if (sectionResult.data?.length) {
-    for (const row of sectionResult.data) {
+  if (sectionData.length) {
+    for (const row of sectionData) {
       if (!row.section_key || !isRecord(row.content)) {
         continue
       }
@@ -266,8 +300,8 @@ export async function loadSiteContent(): Promise<SiteContent> {
     }
   }
 
-  if (navigationResult.data?.length) {
-    const normalizedNavigation = buildNavigation(navigationResult.data)
+  if (navigationData.length) {
+    const normalizedNavigation = buildNavigation(navigationData)
     if (normalizedNavigation.headerLinks.length) {
       merged.navigation.headerLinks = normalizedNavigation.headerLinks
     }
@@ -279,8 +313,8 @@ export async function loadSiteContent(): Promise<SiteContent> {
     }
   }
 
-  if (assetResult.data?.length) {
-    merged.assets = deepMerge(merged.assets, normalizeAssets(assetResult.data))
+  if (assetData.length) {
+    merged.assets = deepMerge(merged.assets, normalizeAssets(assetData))
   }
 
   return normalizeContent(merged)
