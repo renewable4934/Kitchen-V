@@ -37,6 +37,10 @@ function createReusableClient(key: string) {
       persistSession: false,
       detectSessionInUrl: false,
     },
+    global: {
+      // Next.js may cache server-side fetch requests unless explicitly disabled.
+      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+    },
   })
 }
 
