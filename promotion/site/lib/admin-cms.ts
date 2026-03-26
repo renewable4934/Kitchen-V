@@ -4,7 +4,14 @@ import { revalidatePath } from "next/cache"
 
 import { loadSiteContent } from "@/lib/cms"
 import { getSupabaseAdminClient } from "@/lib/supabase"
-import type { FooterContent, HeroContent, SiteContent, SiteSettings } from "@/lib/site-content"
+import {
+  CURRENT_CONTENT_VERSION,
+  fallbackSiteContent,
+  type FooterContent,
+  type HeroContent,
+  type SiteContent,
+  type SiteSettings,
+} from "@/lib/site-content"
 
 const SITE_ID = "main"
 const PAGE_SLUG = "home"
@@ -29,6 +36,43 @@ function getAdminClientOrThrow() {
   }
 
   return client
+}
+
+async function ensureCurrentContentVersion() {
+  const client = getAdminClientOrThrow()
+  const siteResult = await client.from("cms_sites").select("settings").eq("id", SITE_ID).maybeSingle()
+
+  if (siteResult.error) {
+    throw new Error(siteResult.error.message)
+  }
+
+  const currentSettings =
+    siteResult.data?.settings && typeof siteResult.data.settings === "object" && !Array.isArray(siteResult.data.settings)
+      ? siteResult.data.settings
+      : {}
+
+  if (currentSettings.contentVersion === CURRENT_CONTENT_VERSION) {
+    return
+  }
+
+  const mergedSettings = {
+    ...fallbackSiteContent.site,
+    ...currentSettings,
+    contentVersion: CURRENT_CONTENT_VERSION,
+  }
+
+  const upsertResult = await client.from("cms_sites").upsert(
+    {
+      id: SITE_ID,
+      settings: mergedSettings,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  )
+
+  if (upsertResult.error) {
+    throw new Error(upsertResult.error.message)
+  }
 }
 
 export async function getAdminCmsState() {
@@ -69,12 +113,16 @@ export async function saveSettingsBundle(input: {
   footer: FooterContent
 }) {
   const client = getAdminClientOrThrow()
+  await ensureCurrentContentVersion()
 
   const [siteResult, pageResult] = await Promise.all([
     client.from("cms_sites").upsert(
       {
         id: SITE_ID,
-        settings: input.site,
+        settings: {
+          ...input.site,
+          contentVersion: CURRENT_CONTENT_VERSION,
+        },
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" },
@@ -110,6 +158,7 @@ export async function saveSettingsBundle(input: {
 }
 
 export async function saveHeroSection(content: HeroContent) {
+  await ensureCurrentContentVersion()
   await upsertSection("hero", content)
   revalidatePath("/")
   revalidatePath("/admin")
@@ -122,6 +171,7 @@ export async function saveJsonSection(sectionKey: "configurator" | "portfolio" |
     throw new Error("Section content must be a JSON object")
   }
 
+  await ensureCurrentContentVersion()
   await upsertSection(sectionKey, content)
   revalidatePath("/")
   revalidatePath("/admin")
@@ -135,6 +185,7 @@ export async function saveNavigation(input: {
   headerCta: SiteContent["navigation"]["headerCta"]
 }) {
   const client = getAdminClientOrThrow()
+  await ensureCurrentContentVersion()
   const deleteResult = await client
     .from("cms_navigation")
     .delete()
