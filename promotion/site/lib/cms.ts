@@ -1,5 +1,7 @@
 // Purpose: loads the landing content from Supabase CMS tables and safely falls back to the exact v0 copy.
 
+import { unstable_noStore as noStore } from "next/cache"
+
 import { fallbackSiteContent, type CmsAsset, type SiteContent } from "@/lib/site-content"
 import { getSupabaseCmsClient, isSupabaseCmsConfigured } from "@/lib/supabase"
 
@@ -175,6 +177,7 @@ function buildNavigation(rows: Array<{ area: string; label: string; href: string
 }
 
 export async function loadSiteContent(): Promise<SiteContent> {
+  noStore()
   const fallback = cloneFallback()
   const client = getSupabaseCmsClient()
 
