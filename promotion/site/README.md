@@ -1,7 +1,7 @@
 # Title: promotion/site
 **Purpose:** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.  
 **Owner:** Вы / команда проекта.  
-**Last updated:** 2026-03-11
+**Last updated:** 2026-03-26
 
 ## Что это теперь такое
 
@@ -11,6 +11,7 @@
 
 - точная визуальная копия лендинга из `v0`
 - CMS-слой на hosted `Supabase`
+- закрытая CMS-админка `/admin` на Supabase Auth
 - production/staging pipeline через `GitHub Actions`
 - API:
   - `POST /api/lead`
@@ -63,6 +64,7 @@ npm run dev
 Открыть:
 
 - `http://localhost:3000/`
+- `http://localhost:3000/admin/login`
 
 Полезные URL:
 
@@ -90,6 +92,8 @@ npm run dev
 Добавьте:
 
 ```bash
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-public-publishable-key
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-public-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
@@ -97,8 +101,10 @@ SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
 
 Что это значит:
 
+- `NEXT_PUBLIC_SUPABASE_URL` и `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` нужны браузеру для входа в `/admin`
 - `SUPABASE_ANON_KEY` используется для безопасного публичного чтения CMS
 - `SUPABASE_SERVICE_ROLE_KEY` нужен серверным API-роутам для записи лидов и событий без зависимости от permissive anon policy
+- этот же `SUPABASE_SERVICE_ROLE_KEY` нужен owner-панели CMS для создания пользователей и загрузки изображений
 - если `SUPABASE_SERVICE_ROLE_KEY` не задан, сайт временно использует `anon` fallback для записи, но для staging/production это нужно считать переходным режимом
 
 ### Шаг 2. Выполнить SQL в Supabase
@@ -111,7 +117,19 @@ SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
 
 - `promotion/site/supabase/cms_seed.sql`
 
+Потом для админки и загрузки изображений:
+
+- `promotion/site/supabase/migrations/20260326_add_admin_storage_and_policies.sql`
+
 Выполнять нужно по очереди в `Supabase -> SQL Editor -> New query -> Run`.
+
+### Шаг 2.1. Включить настройки Auth для CMS
+
+В `Supabase -> Authentication -> Providers -> Email`:
+
+- выключить `Confirm email`
+- оставить вход только по `email + password`
+- при необходимости выключить публичный `Signups`, если CMS не должна быть доступна извне
 
 ### Шаг 3. Перезапустить локальный сайт
 
@@ -132,6 +150,19 @@ npm run dev
 - `supabase_enabled: true`
 - в bootstrap будет `source: "supabase"` или частично `diagnostics.* = "supabase"`
 
+### Шаг 5. Проверить CMS-админку
+
+Откройте:
+
+- `http://localhost:3000/admin/login`
+
+Что уже есть в CMS MVP:
+
+- вход по email и паролю без email confirmation
+- `/admin` для редактирования контента сайта
+- `/admin/users` только для `owner`
+- загрузка изображений в bucket `cms-media`
+
 ## Как сайт использует Supabase
 
 Схема простая:
@@ -141,14 +172,16 @@ npm run dev
 3. `cms_sections` хранит содержимое секций лендинга
 4. `cms_navigation` хранит пункты меню
 5. `cms_assets` хранит URL картинок и alt-тексты
-6. `leads` хранит заявки
-7. `events` хранит события аналитики
+6. `cms-media` bucket хранит изображения, загруженные из CMS
+7. `leads` хранит заявки
+8. `events` хранит события аналитики
 
 Это позволяет:
 
 - менять тексты без правки кода
 - менять ссылки и CTA через CMS
 - менять изображения через `cms_assets`
+- управлять доступом редакторов и владельцев через Supabase Auth
 - собирать лиды и события в одной базе
 
 ## Ветки и окружения
@@ -236,6 +269,13 @@ npm run build
 npm run start
 npm run typecheck
 ```
+
+## Что появилось в CMS MVP
+
+- `middleware.ts` защищает `/admin` и `/api/admin/*`
+- `app/admin/` содержит экран входа, контентную CMS и owner-only управление пользователями
+- `app/api/admin/` содержит защищённые endpoints сохранения CMS, asset upload и user management
+- `components/admin/` содержит UI-слой CMS без отдельного второго приложения
 
 ## Что уже проверено
 

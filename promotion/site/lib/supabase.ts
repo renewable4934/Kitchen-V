@@ -1,12 +1,37 @@
-// Purpose: reusable Supabase clients for public CMS reads and server-side API writes.
+// Purpose: reusable Supabase clients for public CMS reads, browser auth and server-side admin writes.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 let cachedCmsClient: SupabaseClient | null = null
 let cachedWriteClient: SupabaseClient | null = null
+let cachedAdminClient: SupabaseClient | null = null
+
+function getSupabaseUrl() {
+  return process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+}
+
+function getSupabaseServerAnonKey() {
+  return (
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    ""
+  )
+}
+
+export function getSupabasePublicEnv() {
+  return {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || getSupabaseUrl(),
+    publishableKey:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      "",
+  }
+}
 
 function createReusableClient(key: string) {
-  return createClient(process.env.SUPABASE_URL!, key, {
+  return createClient(getSupabaseUrl(), key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -18,11 +43,11 @@ function createReusableClient(key: string) {
 export type SupabaseWriteMode = "service_role" | "anon_fallback" | "disabled"
 
 export function isSupabaseCmsConfigured() {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY)
+  return Boolean(getSupabaseUrl() && getSupabaseServerAnonKey())
 }
 
 export function getSupabaseWriteMode(): SupabaseWriteMode {
-  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (getSupabaseUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return "service_role"
   }
 
@@ -43,7 +68,7 @@ export function getSupabaseClient() {
   }
 
   if (!cachedCmsClient) {
-    cachedCmsClient = createReusableClient(process.env.SUPABASE_ANON_KEY!)
+    cachedCmsClient = createReusableClient(getSupabaseServerAnonKey())
   }
 
   return cachedCmsClient
@@ -65,9 +90,25 @@ export function getSupabaseWriteClient() {
 
   if (!cachedWriteClient) {
     const key =
-      writeMode === "service_role" ? process.env.SUPABASE_SERVICE_ROLE_KEY! : process.env.SUPABASE_ANON_KEY!
+      writeMode === "service_role" ? process.env.SUPABASE_SERVICE_ROLE_KEY! : getSupabaseServerAnonKey()
     cachedWriteClient = createReusableClient(key)
   }
 
   return cachedWriteClient
+}
+
+export function isSupabaseAdminConfigured() {
+  return Boolean(getSupabaseUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+export function getSupabaseAdminClient() {
+  if (!isSupabaseAdminConfigured()) {
+    return null
+  }
+
+  if (!cachedAdminClient) {
+    cachedAdminClient = createReusableClient(process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  }
+
+  return cachedAdminClient
 }
