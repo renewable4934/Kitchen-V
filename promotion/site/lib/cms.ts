@@ -96,6 +96,38 @@ function normalizeDiscountOptions(
   })
 }
 
+function normalizeContractCards(incomingCards: unknown, fallbackCards: SiteContent["sections"]["contract"]["cards"]) {
+  const cards = Array.isArray(incomingCards) ? incomingCards : []
+
+  return fallbackCards.map((fallbackCard, index) => {
+    const matched =
+      cards.find(
+        (card) =>
+          isRecord(card) &&
+          ((typeof card.icon === "string" && card.icon === fallbackCard.icon) ||
+            (typeof card.title === "string" && card.title === fallbackCard.title)),
+      ) || cards[index]
+
+    return deepMerge(fallbackCard, matched)
+  })
+}
+
+function normalizeLifestyleItems(incomingItems: unknown, fallbackItems: SiteContent["sections"]["lifestyle"]["items"]) {
+  const items = Array.isArray(incomingItems) ? incomingItems : []
+
+  return fallbackItems.map((fallbackItem, index) => {
+    const matched =
+      items.find(
+        (item) =>
+          isRecord(item) &&
+          ((typeof item.title === "string" && item.title === fallbackItem.title) ||
+            (typeof item.imageKey === "string" && item.imageKey === fallbackItem.imageKey)),
+      ) || items[index]
+
+    return deepMerge(fallbackItem, matched)
+  })
+}
+
 function normalizeSiteSettings(site: SiteContent["site"], fallbackSite: SiteContent["site"]) {
   const normalized = { ...site }
 
@@ -122,16 +154,20 @@ function normalizeContent(merged: SiteContent) {
   const canonical = cloneFallback()
   merged.site = normalizeSiteSettings(merged.site, canonical.site)
 
-  merged.navigation.headerLinks = canonical.navigation.headerLinks
-  merged.navigation.footerLinks = canonical.navigation.footerLinks
-  merged.navigation.headerCta = canonical.navigation.headerCta
+  merged.navigation.headerLinks = merged.navigation.headerLinks.length
+    ? merged.navigation.headerLinks
+    : canonical.navigation.headerLinks
+  merged.navigation.footerLinks = merged.navigation.footerLinks.length
+    ? merged.navigation.footerLinks
+    : canonical.navigation.footerLinks
+  merged.navigation.headerCta = merged.navigation.headerCta || canonical.navigation.headerCta
 
-  merged.sections.hero = canonical.sections.hero
-  merged.sections.configurator = canonical.sections.configurator
-  merged.sections.portfolio = canonical.sections.portfolio
-  merged.sections.contract = canonical.sections.contract
-  merged.sections.lifestyle = canonical.sections.lifestyle
-  merged.sections.footer = canonical.sections.footer
+  merged.sections.hero = deepMerge(canonical.sections.hero, merged.sections.hero)
+  merged.sections.configurator = deepMerge(canonical.sections.configurator, merged.sections.configurator)
+  merged.sections.portfolio = deepMerge(canonical.sections.portfolio, merged.sections.portfolio)
+  merged.sections.contract = deepMerge(canonical.sections.contract, merged.sections.contract)
+  merged.sections.lifestyle = deepMerge(canonical.sections.lifestyle, merged.sections.lifestyle)
+  merged.sections.footer = deepMerge(canonical.sections.footer, merged.sections.footer)
 
   merged.sections.portfolio.items = normalizePortfolioItems(merged.sections.portfolio.items, canonical.sections.portfolio.items)
   merged.sections.configurator.steps = normalizeConfiguratorSteps(
@@ -141,6 +177,11 @@ function normalizeContent(merged: SiteContent) {
   merged.sections.configurator.discountOptions = normalizeDiscountOptions(
     merged.sections.configurator.discountOptions,
     canonical.sections.configurator.discountOptions,
+  )
+  merged.sections.contract.cards = normalizeContractCards(merged.sections.contract.cards, canonical.sections.contract.cards)
+  merged.sections.lifestyle.items = normalizeLifestyleItems(
+    merged.sections.lifestyle.items,
+    canonical.sections.lifestyle.items,
   )
 
   return merged
