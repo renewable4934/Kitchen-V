@@ -7,7 +7,7 @@ import { loadSiteContent } from "@/lib/cms"
 
 import "./globals.css"
 
-const siteUrl = "https://zakazpegas.ru"
+const siteUrl = "https://pegasmebel.ru"
 
 const _inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" })
 const _playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" })

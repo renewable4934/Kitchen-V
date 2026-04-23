@@ -134,3 +134,13 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --show-error --silent --retry 10 --retry-delay 5 "$HEALTHCHECK_URL"
+
+      - name: Check CMS drift after deploy
+        working-directory: promotion/site
+        run: |
+          set -euo pipefail
+          SITE_URL="https://${APP_DOMAIN}"
+          if [ -n "${HEALTHCHECK_URL:-}" ]; then
+            SITE_URL="${HEALTHCHECK_URL%/api/health}"
+          fi
+          npm run check:cms-drift -- "$SITE_URL"

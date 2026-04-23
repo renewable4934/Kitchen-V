@@ -48,26 +48,18 @@ type StepItem = {
   label: string
 }
 
-const styleOptions: StyleOption[] = [
-  { value: "neoklassika", label: "Неоклассика", imageSrc: "/images/configurator/styles-webp/neoklassika.webp" },
-  { value: "minimalizm", label: "Минимализм", imageSrc: "/images/configurator/styles-webp/minimalizm.webp" },
-  { value: "skandi-dzen", label: "Сканди-дзен", imageSrc: "/images/configurator/styles-webp/skandi-dzen.webp" },
-  { value: "klassika", label: "Классика", imageSrc: "/images/configurator/styles-webp/klassika.webp" },
-  { value: "eko", label: "Эко", imageSrc: "/images/configurator/styles-webp/eko.webp" },
-  { value: "loft", label: "Лофт", imageSrc: "/images/configurator/styles-webp/loft.webp" },
-  { value: "kantri", label: "Кантри", imageSrc: "/images/configurator/styles-webp/kantri.webp" },
-  {
-    value: "sredizemnomore",
-    label: "Средиземноморье",
-    imageSrc: "/images/configurator/styles-webp/sredizemnomore.webp",
-  },
-]
+const fallbackStyleImages: Record<string, string> = {
+  "scandinavian-minimalism": "/images/kitchen-1.jpg",
+  "modern-classic": "/images/kitchen-2.jpg",
+  "eco-style": "/images/kitchen-3.jpg",
+  premium: "/images/kitchen-4.jpg",
+}
 
-const shapeOptions: ShapeOption[] = [
-  { value: "straight", label: "Прямая", imageSrc: "/images/configurator/shape-straight.jpg" },
-  { value: "l-shaped", label: "Угловая", imageSrc: "/images/configurator/shape-l-shaped.jpg" },
-  { value: "u-shaped", label: "П-образная", imageSrc: "/images/configurator/shape-u-shaped.jpg" },
-]
+const fallbackShapeImages: Record<string, string> = {
+  straight: "/images/configurator/shape-straight.jpg",
+  "l-shaped": "/images/configurator/shape-l-shaped.jpg",
+  "u-shaped": "/images/configurator/shape-u-shaped.jpg",
+}
 
 const applianceOptions = [
   "Варочная панель",
@@ -107,6 +99,22 @@ function preloadImages(imageSources: string[]) {
     image.decoding = "async"
     image.src = src
   })
+}
+
+function buildVisualOptions(
+  options: ConfiguratorContent["steps"][number]["options"],
+  fallbackImages: Record<string, string>,
+): StyleOption[] {
+  return Array.isArray(options)
+    ? options
+        .filter((option): option is NonNullable<typeof option> => Boolean(option?.value && option?.label))
+        .map((option) => ({
+          value: option.value,
+          label: option.label,
+          imageSrc: option.imageKey || fallbackImages[option.value] || "",
+        }))
+        .filter((option) => Boolean(option.imageSrc))
+    : []
 }
 
 function buildDiscountPayload(discounts: string[], options: DiscountOption[]) {
@@ -249,6 +257,10 @@ export function ConfiguratorSection({
   experimentKey,
 }: ConfiguratorSectionProps) {
   const discountOptions = Array.isArray(content.discountOptions) ? content.discountOptions : []
+  const styleStep = content.steps.find((step) => step.id === "style")
+  const shapeStep = content.steps.find((step) => step.id === "shape")
+  const styleOptions = buildVisualOptions(styleStep?.options, fallbackStyleImages)
+  const shapeOptions = buildVisualOptions(shapeStep?.options, fallbackShapeImages)
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
   const [selectedShape, setSelectedShape] = useState("")
@@ -269,8 +281,8 @@ export function ConfiguratorSection({
   const phoneInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    preloadImages(shapeOptions.map((option) => option.imageSrc))
-  }, [])
+    preloadImages([...styleOptions, ...shapeOptions].map((option) => option.imageSrc))
+  }, [content.steps])
 
   const totalSteps = stepItems.length
   const isDiscountStep = currentStep === 4

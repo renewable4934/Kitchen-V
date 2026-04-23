@@ -261,6 +261,39 @@ Workflow `site-cms-backup.yml`:
 
 Это нужно, чтобы `Supabase` оставался источником правды для контента, но без потери истории и без попытки превращать CMS-изменения в код.
 
+## Source Of Truth
+
+- `Git` хранит код, canonical fallback, seed и migrations.
+- `Supabase` хранит live CMS content, но `contentVersion` сам по себе не доказывает, что строки внутри актуальны.
+- `VPS` хранит только runtime release и не должен быть местом ручного редактирования сайта.
+
+## CMS Drift Check
+
+После deploy или CMS restore нужно прогонять live-проверку:
+
+```bash
+npm run check:cms-drift
+```
+
+Скрипт проверяет:
+
+- `https://pegasmebel.ru/api/cms/bootstrap`
+- публичный HTML `https://pegasmebel.ru`
+
+И падает, если:
+
+- вернулись `Оставить заявку`, `3D проект для Вас`, `Создайте свою кухню`, `ПМ`
+- в HTML снова появился `zakazpegas.ru`
+- в HTML снова появились hardcoded stale labels вроде `Неоклассика` или `Сканди-дзен`
+- отсутствуют canonical строки вроде `Получить персональный расчет`, `Созидание замыслов`, `Свобода для полёта мечты`
+
+## Change Protocol
+
+- Любое изменение CMS начинается с export backup + checksum + rollback SQL/JSON.
+- Любое изменение canonical контента в CMS сопровождается обновлением Git seed/migration.
+- Любой deploy проверяет release id, health, bootstrap и public HTML expectations.
+- Нельзя считать `contentVersion` достаточным доказательством актуальности CMS rows без bootstrap/html проверки.
+
 ## Команды
 
 ```bash
@@ -268,6 +301,7 @@ npm run dev
 npm run build
 npm run start
 npm run typecheck
+npm run check:cms-drift
 ```
 
 ## Что появилось в CMS MVP
