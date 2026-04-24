@@ -1,7 +1,7 @@
 -- Title: CMS seed for the exact v0 landing
 -- Purpose: fills Supabase CMS tables with the current Pegas landing content, navigation and image references.
 -- Owner: Project team
--- Last updated: 2026-03-10
+-- Last updated: 2026-04-24
 
 insert into public.cms_sites (id, settings)
 values (
