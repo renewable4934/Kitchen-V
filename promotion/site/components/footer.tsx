@@ -20,6 +20,7 @@ type FooterProps = {
   phone: string
   email: string
   address: string
+  addressMapQuery?: string
   privacyLabel: string
   copyrightOwner: string
   whatsappPhone: string
@@ -37,6 +38,7 @@ export function Footer({
   phone,
   email,
   address,
+  addressMapQuery,
   privacyLabel,
   copyrightOwner,
   whatsappPhone,
@@ -46,7 +48,8 @@ export function Footer({
 }: FooterProps) {
   const safeLinks = Array.isArray(links) ? links : []
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`
-  const addressHref = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`
+  const addressHref = `https://yandex.ru/maps/?text=${encodeURIComponent(addressMapQuery || address)}`
+  const displayAddress = address.toLowerCase().includes("офис 12") ? address : `${address}, офис 12`
   const whatsappHref =
     whatsappPhone && whatsappPhone.trim()
       ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(whatsappMessage)}`
@@ -112,7 +115,7 @@ export function Footer({
                   rel="noopener noreferrer"
                   className="transition-colors hover:text-foreground hover:underline underline-offset-2"
                 >
-                  {address}
+                  {displayAddress}
                 </a>
                 {whatsappHref ? (
                   <a

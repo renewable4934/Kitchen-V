@@ -134,6 +134,7 @@ export type SiteSettings = {
   contactPhone: string
   email: string
   address: string
+  addressMapQuery?: string
   whatsappPhone: string
   whatsappMessage: string
   footerCopyrightOwner: string
@@ -192,7 +193,8 @@ export const fallbackSiteContent: SiteContent = {
     contentVersion: CURRENT_CONTENT_VERSION,
     contactPhone: "+7 916 670-00-43",
     email: "vasiliy.kruk@yandex.com",
-    address: "Россия, г. Ростов-на-Дону, Троллейбусная 16 В",
+    address: "Россия, г. Ростов-на-Дону, Троллейбусная 16 В, офис 12",
+    addressMapQuery: "Россия, г. Ростов-на-Дону, Троллейбусная 16 В",
     whatsappPhone: "",
     whatsappMessage: "Здравствуйте, хочу обсудить проект кухни.",
     footerCopyrightOwner: "ООО «Пегас»",

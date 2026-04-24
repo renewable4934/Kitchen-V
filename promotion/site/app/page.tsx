@@ -46,6 +46,7 @@ export default async function Home() {
         phone={content.site.contactPhone}
         email={content.site.email}
         address={content.site.address}
+        addressMapQuery={content.site.addressMapQuery}
         privacyLabel={content.sections.footer.privacyLabel}
         copyrightOwner={content.site.footerCopyrightOwner}
         whatsappPhone={content.site.whatsappPhone}
