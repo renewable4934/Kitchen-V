@@ -80,10 +80,14 @@ values
         "description": "Выберите стиль кухни",
         "kind": "options",
         "options": [
-          { "value": "scandinavian-minimalism", "label": "Скандинавский минимализм", "imageKey": "/images/kitchen-1.jpg" },
-          { "value": "modern-classic", "label": "Современная классика", "imageKey": "/images/kitchen-2.jpg" },
-          { "value": "eco-style", "label": "Эко-стиль", "imageKey": "/images/kitchen-3.jpg" },
-          { "value": "premium", "label": "Премиум", "imageKey": "/images/kitchen-4.jpg" }
+          { "value": "neoklassika", "label": "Неоклассика", "imageKey": "/images/configurator/styles-webp/neoklassika.webp" },
+          { "value": "minimalizm", "label": "Минимализм", "imageKey": "/images/configurator/styles-webp/minimalizm.webp" },
+          { "value": "skandi-dzen", "label": "Сканди-дзен", "imageKey": "/images/configurator/styles-webp/skandi-dzen.webp" },
+          { "value": "klassika", "label": "Классика", "imageKey": "/images/configurator/styles-webp/klassika.webp" },
+          { "value": "eko", "label": "Эко", "imageKey": "/images/configurator/styles-webp/eko.webp" },
+          { "value": "loft", "label": "Лофт", "imageKey": "/images/configurator/styles-webp/loft.webp" },
+          { "value": "kantri", "label": "Кантри", "imageKey": "/images/configurator/styles-webp/kantri.webp" },
+          { "value": "sredizemnomore", "label": "Средиземноморье", "imageKey": "/images/configurator/styles-webp/sredizemnomore.webp" }
         ]
       },
       {
