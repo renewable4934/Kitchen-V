@@ -8,7 +8,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="${APP_NAME:?Set APP_NAME, for example kitchen-v-prod}"
-APP_DOMAIN="${APP_DOMAIN:?Set APP_DOMAIN, for example zakazpegas.ru}"
+APP_DOMAIN="${APP_DOMAIN:?Set APP_DOMAIN, for example pegasmebel.ru}"
 APP_PORT="${APP_PORT:?Set APP_PORT, for example 3000}"
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
 RUN_USER="${RUN_USER:-$DEPLOY_USER}"
