@@ -1,7 +1,7 @@
 # Title: Site production deploy workflow
 # Purpose: deploys promotion/site to the production app instance on Aeza after main branch updates.
 # Owner: Project team
-# Last updated: 2026-03-11
+# Last updated: 2026-05-26
 
 name: Site Deploy Production
 
