@@ -11,6 +11,8 @@ type HeroSectionProps = {
 
 export function HeroSection({ content, assets, offerVariant, experimentKey }: HeroSectionProps) {
   const heroImage = assets[content.imageKey]
+  const primaryCtaLabel =
+    content.primaryCta.label === "Выбрать опции" ? "Получить расчет" : content.primaryCta.label
   const titleSeparatorIndex = content.title.indexOf("\n")
   const primaryTitle =
     titleSeparatorIndex === -1 ? content.title : content.title.slice(0, titleSeparatorIndex)
@@ -45,7 +47,7 @@ export function HeroSection({ content, assets, offerVariant, experimentKey }: He
                     data-analytics-experiment-key={experimentKey || ""}
                     className="hero-cta hero-cta-primary"
                   >
-                    {content.primaryCta.label}
+                    {primaryCtaLabel}
                   </a>
                   <a
                     href={content.secondaryCta.href}
@@ -81,7 +83,7 @@ export function HeroSection({ content, assets, offerVariant, experimentKey }: He
                     data-analytics-experiment-key={experimentKey || ""}
                     className="hero-cta hero-cta-primary"
                   >
-                    {content.primaryCta.label}
+                    {primaryCtaLabel}
                   </a>
                   <a
                     href={content.secondaryCta.href}

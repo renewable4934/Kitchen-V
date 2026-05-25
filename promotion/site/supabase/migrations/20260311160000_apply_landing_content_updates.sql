@@ -77,7 +77,7 @@ values
     "statLabel": "",
     "statValue": "",
     "primaryCta": {
-      "label": "Выбрать опции",
+      "label": "Получить расчет",
       "href": "#configurator",
       "eventName": "start_quiz"
     },
@@ -410,7 +410,7 @@ values
 ('main', 'header', 'Портфолио', '#portfolio', 20, true),
 ('main', 'header', 'Контракт', '#contract', 30, true),
 ('main', 'header', 'Кухня и жизнь', '#lifestyle', 40, true),
-('main', 'header_cta', 'Получить персональный расчет', '#configurator', 50, true),
+('main', 'header_cta', '+7 916 670-00-43', 'tel:+79166700043', 50, true),
 ('main', 'footer', 'Главная', '#hero', 10, true),
 ('main', 'footer', '3D-проект', '#configurator', 20, true),
 ('main', 'footer', 'Портфолио', '#portfolio', 30, true),

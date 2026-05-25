@@ -216,8 +216,8 @@ export const fallbackSiteContent: SiteContent = {
       { label: "Кухня и жизнь", href: "#lifestyle" },
     ],
     headerCta: {
-      label: "Получить персональный расчет",
-      href: "#configurator",
+      label: "+7 916 670-00-43",
+      href: "tel:+79166700043",
       eventName: "start_quiz",
     },
   },
@@ -228,7 +228,7 @@ export const fallbackSiteContent: SiteContent = {
       description: "",
       tagline: "Кухни, которые освобождают пространство и время",
       primaryCta: {
-        label: "Выбрать опции",
+        label: "Получить расчет",
         href: "#configurator",
         eventName: "start_quiz",
       },

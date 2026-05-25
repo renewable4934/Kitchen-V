@@ -15,6 +15,11 @@ const headerWordmarkFont = Cormorant_Garamond({
   weight: ["400", "500"],
 })
 
+const HEADER_PHONE_LABEL = "+7 916 670-00-43"
+const HEADER_PHONE_MOBILE_LABEL = "Позвонить"
+const HEADER_PHONE_HREF = "tel:+79166700043"
+const HEADER_PHONE_ARIA_LABEL = "Позвонить +7 916 670-00-43"
+
 type HeaderProps = {
   brandName: string
   links: NavLink[]
@@ -23,12 +28,12 @@ type HeaderProps = {
   experimentKey: string | null
 }
 
-export function Header({ brandName, links, cta, offerVariant, experimentKey }: HeaderProps) {
+export function Header({ brandName, links, offerVariant, experimentKey }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
   const safeLinks = Array.isArray(links) ? links : []
-  const ctaHref = cta?.href || "#configurator"
-  const ctaLabel = cta?.label || ""
+  const ctaHref = HEADER_PHONE_HREF
+  const ctaLabel = HEADER_PHONE_LABEL
   const brandLabel = brandName.toUpperCase()
 
   useEffect(() => {
@@ -103,21 +108,33 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
           ))}
         </nav>
 
-        <a
-          href={ctaHref}
-          onClick={handleHeaderCtaClick}
-          className="hidden rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex"
-        >
-          {ctaLabel}
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href={ctaHref}
+            onClick={handleHeaderCtaClick}
+            aria-label={HEADER_PHONE_ARIA_LABEL}
+            className="hidden rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:inline-flex"
+          >
+            {ctaLabel}
+          </a>
 
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="text-foreground md:hidden"
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+          <a
+            href={ctaHref}
+            onClick={handleHeaderCtaClick}
+            aria-label={HEADER_PHONE_ARIA_LABEL}
+            className="inline-flex rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 md:hidden"
+          >
+            {HEADER_PHONE_MOBILE_LABEL}
+          </a>
+
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="text-foreground md:hidden"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (
@@ -139,6 +156,7 @@ export function Header({ brandName, links, cta, offerVariant, experimentKey }: H
                 handleHeaderCtaClick()
                 setMobileOpen(false)
               }}
+              aria-label={HEADER_PHONE_ARIA_LABEL}
               className="mt-2 rounded-lg bg-primary px-5 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {ctaLabel}
