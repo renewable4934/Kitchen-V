@@ -10,7 +10,7 @@ APP_DIR="${APP_DIR:?Set APP_DIR}"
 SERVICE_NAME="${SERVICE_NAME:?Set SERVICE_NAME}"
 APP_PORT="${APP_PORT:?Set APP_PORT}"
 APP_DOMAIN="${APP_DOMAIN:-}"
-# APP_DOMAIN may be configured as either a bare host or a full URL.
+# APP_DOMAIN may be configured as either a bare host or full URL.
 RELEASE_ARCHIVE="${RELEASE_ARCHIVE:?Set RELEASE_ARCHIVE}"
 ENV_FILE="${ENV_FILE:-}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +%Y%m%d%H%M%S)}"
