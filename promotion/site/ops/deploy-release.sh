@@ -2,7 +2,7 @@
 # Title: Release deploy script
 # Purpose: unpacks a prepared release, links the shared env file, builds the app and restarts the site service with rollback on failed healthcheck.
 # Owner: Project team
-# Last updated: 2026-03-11
+# Last updated: 2026-05-26
 
 set -Eeuo pipefail
 
@@ -50,8 +50,19 @@ activate_release() {
   ln -s "$1" "$CURRENT_LINK"
 }
 
+normalize_domain_host() {
+  local value="$1"
+  value="${value//[[:space:]]/}"
+  value="${value#http://}"
+  value="${value#https://}"
+  value="${value%%/*}"
+  printf '%s' "$value"
+}
+
 sync_caddy_upstream() {
-  if [ -z "$APP_DOMAIN" ]; then
+  local app_domain_host
+  app_domain_host="$(normalize_domain_host "$APP_DOMAIN")"
+  if [ -z "$app_domain_host" ]; then
     return
   fi
 
@@ -63,7 +74,7 @@ sync_caddy_upstream() {
 
   while IFS= read -r matched_file; do
     caddy_files+=("$matched_file")
-  done < <(grep -rl -- "$APP_DOMAIN" /etc/caddy/sites-enabled /etc/caddy/Caddyfile 2>/dev/null || true)
+  done < <(grep -rl -- "$app_domain_host" /etc/caddy/sites-enabled /etc/caddy/Caddyfile 2>/dev/null || true)
 
   if [ "${#caddy_files[@]}" -eq 0 ]; then
     return
