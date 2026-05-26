@@ -40,6 +40,15 @@ if [ -L "$CURRENT_LINK" ]; then
   previous_release="$(readlink -f "$CURRENT_LINK" || true)"
 fi
 
+if [ -e "$CURRENT_LINK" ] && [ ! -L "$CURRENT_LINK" ]; then
+  mv "$CURRENT_LINK" "${CURRENT_LINK}.pre-symlink-${RELEASE_ID}"
+fi
+
+activate_release() {
+  rm -f "$CURRENT_LINK"
+  ln -s "$1" "$CURRENT_LINK"
+}
+
 tar -xzf "$RELEASE_ARCHIVE" -C "$RELEASE_DIR"
 
 if [ -n "$ENV_FILE" ] && [ -f "$ENV_FILE" ]; then
@@ -53,7 +62,7 @@ fi
 cd "$RELEASE_DIR"
 npm ci
 npm run build
-ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+activate_release "$RELEASE_DIR"
 $SYSTEMCTL_BIN restart "$SERVICE_NAME"
 
 healthy=0
@@ -68,7 +77,7 @@ done
 if [ "$healthy" -ne 1 ]; then
   echo "Healthcheck failed for release ${RELEASE_ID}. Rolling back." >&2
   if [ -n "$previous_release" ] && [ -d "$previous_release" ]; then
-    ln -sfn "$previous_release" "$CURRENT_LINK"
+    activate_release "$previous_release"
     $SYSTEMCTL_BIN restart "$SERVICE_NAME"
   fi
   exit 1
