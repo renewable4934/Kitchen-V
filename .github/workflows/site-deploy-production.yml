@@ -149,9 +149,6 @@ jobs:
         run: |
           set -euo pipefail
           SITE_URL="https://${APP_DOMAIN}"
-          if [ -n "${HEALTHCHECK_URL:-}" ]; then
-            SITE_URL="${HEALTHCHECK_URL%/api/health}"
-          fi
           html="$(curl --fail --show-error --silent --location \
             --retry 10 --retry-delay 5 \
             -H 'Cache-Control: no-cache' \

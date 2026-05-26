@@ -55,26 +55,50 @@ sync_caddy_upstream() {
     return
   fi
 
-  local caddy_file="/etc/caddy/sites-enabled/${SERVICE_NAME}.caddy"
-  if [ ! -f "$caddy_file" ]; then
+  local caddy_files=()
+  local service_caddy_file="/etc/caddy/sites-enabled/${SERVICE_NAME}.caddy"
+  if [ -f "$service_caddy_file" ]; then
+    caddy_files+=("$service_caddy_file")
+  fi
+
+  while IFS= read -r matched_file; do
+    caddy_files+=("$matched_file")
+  done < <(grep -rl -- "$APP_DOMAIN" /etc/caddy/sites-enabled /etc/caddy/Caddyfile 2>/dev/null || true)
+
+  if [ "${#caddy_files[@]}" -eq 0 ]; then
     return
   fi
 
-  local tmp_file
-  tmp_file="$(mktemp)"
-  sed -E "s|reverse_proxy 127\\.0\\.0\\.1:[0-9]+|reverse_proxy 127.0.0.1:${APP_PORT}|" "$caddy_file" > "$tmp_file"
+  local updated=0
+  local seen_files=""
+  local caddy_file
+  for caddy_file in "${caddy_files[@]}"; do
+    if [[ "$seen_files" == *"|$caddy_file|"* ]]; then
+      continue
+    fi
+    seen_files="${seen_files}|${caddy_file}|"
 
-  if cmp -s "$tmp_file" "$caddy_file"; then
+    local tmp_file
+    tmp_file="$(mktemp)"
+    sed -E "s|reverse_proxy 127\\.0\\.0\\.1:[0-9]+|reverse_proxy 127.0.0.1:${APP_PORT}|" "$caddy_file" > "$tmp_file"
+
+    if cmp -s "$tmp_file" "$caddy_file"; then
+      rm -f "$tmp_file"
+      continue
+    fi
+
+    if [ -w "$caddy_file" ]; then
+      install -m 644 "$tmp_file" "$caddy_file"
+    else
+      sudo install -m 644 "$tmp_file" "$caddy_file"
+    fi
     rm -f "$tmp_file"
+    updated=1
+  done
+
+  if [ "$updated" -ne 1 ]; then
     return
   fi
-
-  if [ -w "$caddy_file" ]; then
-    install -m 644 "$tmp_file" "$caddy_file"
-  else
-    sudo install -m 644 "$tmp_file" "$caddy_file"
-  fi
-  rm -f "$tmp_file"
 
   if command -v caddy >/dev/null 2>&1; then
     caddy validate --config /etc/caddy/Caddyfile
