@@ -127,7 +127,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
-            "chmod +x /tmp/deploy-release.sh && APP_DIR='${APP_DIR}' SERVICE_NAME='${SERVICE_NAME}' APP_PORT='${APP_PORT}' RELEASE_ARCHIVE='/tmp/site-release.tgz' ENV_FILE='/tmp/site.env' bash /tmp/deploy-release.sh"
+            "chmod +x /tmp/deploy-release.sh && APP_DIR='${APP_DIR}' SERVICE_NAME='${SERVICE_NAME}' APP_PORT='${APP_PORT}' APP_DOMAIN='${APP_DOMAIN}' RELEASE_ARCHIVE='/tmp/site-release.tgz' ENV_FILE='/tmp/site.env' bash /tmp/deploy-release.sh"
 
       - name: Check public health endpoint
         if: env.HEALTHCHECK_URL != ''
@@ -144,3 +144,19 @@ jobs:
             SITE_URL="${HEALTHCHECK_URL%/api/health}"
           fi
           npm run check:cms-drift -- "$SITE_URL"
+
+      - name: Check public mobile CTA freshness
+        run: |
+          set -euo pipefail
+          SITE_URL="https://${APP_DOMAIN}"
+          if [ -n "${HEALTHCHECK_URL:-}" ]; then
+            SITE_URL="${HEALTHCHECK_URL%/api/health}"
+          fi
+          html="$(curl --fail --show-error --silent --location \
+            --retry 10 --retry-delay 5 \
+            -H 'Cache-Control: no-cache' \
+            -A 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1' \
+            "${SITE_URL}/?deploy_mobile_cta_check=${GITHUB_SHA}")"
+          printf '%s' "$html" | grep -F 'href="tel:+79166700043"' >/dev/null
+          printf '%s' "$html" | grep -F 'Позвонить' >/dev/null
+          printf '%s' "$html" | grep -F 'aria-label="Позвонить +7 916 670-00-43"' >/dev/null

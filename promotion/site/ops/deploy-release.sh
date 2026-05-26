@@ -9,6 +9,7 @@ set -Eeuo pipefail
 APP_DIR="${APP_DIR:?Set APP_DIR}"
 SERVICE_NAME="${SERVICE_NAME:?Set SERVICE_NAME}"
 APP_PORT="${APP_PORT:?Set APP_PORT}"
+APP_DOMAIN="${APP_DOMAIN:-}"
 RELEASE_ARCHIVE="${RELEASE_ARCHIVE:?Set RELEASE_ARCHIVE}"
 ENV_FILE="${ENV_FILE:-}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +%Y%m%d%H%M%S)}"
@@ -49,6 +50,38 @@ activate_release() {
   ln -s "$1" "$CURRENT_LINK"
 }
 
+sync_caddy_upstream() {
+  if [ -z "$APP_DOMAIN" ]; then
+    return
+  fi
+
+  local caddy_file="/etc/caddy/sites-enabled/${SERVICE_NAME}.caddy"
+  if [ ! -f "$caddy_file" ]; then
+    return
+  fi
+
+  local tmp_file
+  tmp_file="$(mktemp)"
+  sed -E "s|reverse_proxy 127\\.0\\.0\\.1:[0-9]+|reverse_proxy 127.0.0.1:${APP_PORT}|" "$caddy_file" > "$tmp_file"
+
+  if cmp -s "$tmp_file" "$caddy_file"; then
+    rm -f "$tmp_file"
+    return
+  fi
+
+  if [ -w "$caddy_file" ]; then
+    install -m 644 "$tmp_file" "$caddy_file"
+  else
+    sudo install -m 644 "$tmp_file" "$caddy_file"
+  fi
+  rm -f "$tmp_file"
+
+  if command -v caddy >/dev/null 2>&1; then
+    caddy validate --config /etc/caddy/Caddyfile
+  fi
+  $SYSTEMCTL_BIN reload caddy || $SYSTEMCTL_BIN restart caddy
+}
+
 tar -xzf "$RELEASE_ARCHIVE" -C "$RELEASE_DIR"
 
 if [ -n "$ENV_FILE" ] && [ -f "$ENV_FILE" ]; then
@@ -64,6 +97,7 @@ npm ci
 npm run build
 activate_release "$RELEASE_DIR"
 $SYSTEMCTL_BIN restart "$SERVICE_NAME"
+sync_caddy_upstream
 
 healthy=0
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
