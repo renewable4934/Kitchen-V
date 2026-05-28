@@ -1,7 +1,7 @@
 # Title: promotion/site
 **Purpose:** Основной код сайта: Next.js-лендинг, Supabase CMS, API лидов и событий.  
 **Owner:** Вы / команда проекта.  
-**Last updated:** 2026-03-26
+**Last updated:** 2026-05-28
 
 ## Что это теперь такое
 
