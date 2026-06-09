@@ -8,7 +8,7 @@ import {
 } from "./aiup-bitrix-gateway-store.ts"
 
 export const AIUP_GATEWAY_ENDPOINT_PATH = "/api/aiup/bitrix-test"
-export const AIUP_GATEWAY_MODE_REQUIRED = "test-only"
+export const AIUP_GATEWAY_MODE_REQUIRED = "test"
 export const AIUP_GATEWAY_MANUAL_GATE_REQUIRED = "test-only-enabled"
 export const AIUP_GATEWAY_TEST_PHONE = "+79990000000"
 export const AIUP_GATEWAY_MAX_DAILY_DEFAULT = 5
@@ -306,7 +306,7 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
   const dailyLimit = parsePositiveInteger(dailyLimitRaw)
 
   if (mode !== AIUP_GATEWAY_MODE_REQUIRED) {
-    throw new Error("AIUP_GATEWAY_MODE must be test-only")
+    throw new Error("AIUP_GATEWAY_MODE must be test")
   }
 
   if (manualGate !== AIUP_GATEWAY_MANUAL_GATE_REQUIRED) {
@@ -656,7 +656,6 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    const mapping = await resolveBitrixMapping(env.bitrixWebhookUrl, fetchImpl)
     const journal = await readJournal()
     const dayKey = buildDayKey(now)
     const duplicateKey = buildDuplicateKey(normalized)
@@ -678,6 +677,48 @@ export async function processAiupBitrixGatewayRequest(
         },
       }
     }
+
+    if (!options.performWrite) {
+      logEntry = buildGatewayLogEntry({
+        bitrixResult: "not_sent",
+        duplicateResult: "none",
+        now,
+        payload: normalized,
+        requestId,
+        validationResult: "accepted",
+      })
+
+      return {
+        ok: true,
+        status: 200,
+        body: {
+          bitrix: {
+            category_id: "",
+            category_name: AIUP_GATEWAY_BITRIX_CATEGORY_NAME,
+            source_id: "",
+            source_name: AIUP_GATEWAY_BITRIX_SOURCE_NAME,
+            stage_id: "",
+            stage_name: AIUP_GATEWAY_BITRIX_STAGE_NAME,
+          },
+          check_summary: {
+            daily_limit_remaining: Math.max(env.dailyLimit - createdToday, 0),
+            duplicate_result: "none",
+            ignored_fields: picked.ignored,
+            journal_store_path: getAiupGatewayStorePath(),
+          },
+          log_entry: logEntry,
+          mapping: {
+            field_codes: {},
+          },
+          ok: true,
+          request_id: requestId,
+          result: "dry_run",
+          sanitized_payload: sanitized,
+        },
+      }
+    }
+
+    const mapping = await resolveBitrixMapping(env.bitrixWebhookUrl, fetchImpl)
 
     const localDuplicate = journal.records.find(
       (record) =>
@@ -787,7 +828,7 @@ export async function processAiupBitrixGatewayRequest(
     }
 
     const payloadForBitrix = buildBitrixDealPayload(mapping, normalized, now)
-    const resultType = options.performWrite ? "created" : "dry_run"
+    const resultType = "created"
 
     logEntry = buildGatewayLogEntry({
       bitrixResult: options.performWrite ? "created" : "not_sent",
@@ -797,37 +838,6 @@ export async function processAiupBitrixGatewayRequest(
       requestId,
       validationResult: "accepted",
     })
-
-    if (!options.performWrite) {
-      return {
-        ok: true,
-        status: 200,
-        body: {
-          bitrix: {
-            category_id: mapping.categoryId,
-            category_name: mapping.categoryName,
-            source_id: mapping.sourceId,
-            source_name: mapping.sourceName,
-            stage_id: mapping.startStageId,
-            stage_name: mapping.startStageName,
-          },
-          check_summary: {
-            daily_limit_remaining: Math.max(env.dailyLimit - createdToday, 0),
-            duplicate_result: "none",
-            ignored_fields: picked.ignored,
-            journal_store_path: getAiupGatewayStorePath(),
-          },
-          log_entry: logEntry,
-          mapping: {
-            field_codes: mapping.fieldCodes,
-          },
-          ok: true,
-          request_id: requestId,
-          result: resultType,
-          sanitized_payload: sanitized,
-        },
-      }
-    }
 
     const createdDealId = await callBitrixMethod<number>(
       env.bitrixWebhookUrl,

@@ -315,6 +315,8 @@ test("ignores extra payload fields and accepts dry run", async () => {
   assert.equal(result.ok, true)
   assert.equal(result.body.result, "dry_run")
   assert.deepEqual(result.body.check_summary.ignored_fields, ["extra_field"])
+  assert.equal(result.body.check_summary.duplicate_result, "none")
+  assert.equal(harness.capturedRequests.length, 0)
   assert.ok(!JSON.stringify(result.body).includes("test-approval-token"))
   assert.equal(result.body.sanitized_payload.phone_masked, "+7999******00")
 })

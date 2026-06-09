@@ -824,6 +824,15 @@
 - **Next step:** Использовать этот freeze как контрольную точку; любые deploy, live-режим, реальные контакты и новые write-проверки делать только по отдельному подтверждению владельца.
 
 ### Entry
+- **Path:** `crm/architecture/ai-up-controlled-webhook-gateway-public-dry-run-2026-06-08.md`
+- **Purpose (RU):** Короткий отчёт о фактическом deploy test-only gateway на текущую инфраструктуру сайта и о публичном dry-run без AI-UP, без реальных контактов и без записи в Bitrix24.
+- **Trigger:** Нужно было выпустить уже готовый controlled webhook gateway на существующий сайт, включить только test-only runtime-режим и проверить публичный endpoint безопасным dry-run.
+- **Owner:** Вы / CRM-ответственный / владелец проекта.
+- **Last updated:** 2026-06-09
+- **Lifecycle:** Active
+- **Next step:** Держать endpoint только в dry-run/test-only режиме до отдельного подтверждения владельца на любой write-шаг; отдельно привести в порядок GitHub environment secrets и cleanup старых релизов на сервере.
+
+### Entry
 - **Path:** `crm/access/`
 - **Purpose (RU):** Папка для инструкций по доступам. Сам пароль Supabase Postgres хранится не в Git, а в macOS Keychain.
 - **Trigger:** Нужен безопасный способ хранить доступ к базе и чтобы его можно было найти позже без публикации секрета.
