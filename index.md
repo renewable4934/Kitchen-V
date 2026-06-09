@@ -45,6 +45,7 @@
 39. В `promotion/site` реализован local-only controlled webhook gateway для будущего AI-UP -> Bitrix24: жёсткий `test-only` режим, manual gate, approval token, allowlist, дедупликация, дневной лимит и safe logging без deploy в production.
 40. Local-only проверка gateway завершена успешно: `dry_run` подтвердил mapping на воронку `AI-UP / Test`, а один test-only write создал сделку `ID 21` в `CATEGORY_ID = 1`, `STAGE_ID = C1:NEW` с `activities_count = 0`.
 41. Выполнен safety freeze local-only gateway: повторный secret scan и diff review не нашли секретов в коммитируемом наборе, `typecheck` и `test:aiup-gateway` зелёные, fallback на `Продажи` не найден, второй Bitrix write не выполнялся.
+42. Gateway расширен безопасным режимом `first_real_test` и выпущен на текущую инфраструктуру только для dry-run, но реальный AI-UP запуск остановлен: в проекте уже обнаружены `48` источников, `7` активных источников, телефонные источники и дневной лимит `56`, что нарушает согласованный контур `5 сайтов / без телефонов / 15 контактов`.
 
 ## Core files
 Зачем сущность: базовые документы-навигаторы, которые поддерживают понятность проекта.
@@ -831,6 +832,15 @@
 - **Last updated:** 2026-06-09
 - **Lifecycle:** Active
 - **Next step:** Держать endpoint только в dry-run/test-only режиме до отдельного подтверждения владельца на любой write-шаг; отдельно привести в порядок GitHub environment secrets и cleanup старых релизов на сервере.
+
+### Entry
+- **Path:** `crm/architecture/ai-up-first-real-test-launch-2026-06-09.md`
+- **Purpose (RU):** Итоговый отчёт по попытке запуска первого реального AI-UP теста: какой patch понадобился для gateway, какой dry-run был выполнен и почему фактический старт был остановлен из-за небезопасной текущей конфигурации AI-UP проекта.
+- **Trigger:** После подтверждения владельца на первый реальный AI-UP тест нужно было быстро проверить проект, выпустить минимальный patch gateway и решить, можно ли безопасно стартовать реальный поток до 15 контактов.
+- **Owner:** Вы / CRM-ответственный / владелец проекта.
+- **Last updated:** 2026-06-09
+- **Lifecycle:** Active
+- **Next step:** Вернуть AI-UP проект к согласованному контуру `5 сайтов / без телефонов / лимит 15`, подключить только controlled gateway и только потом отдельно подтверждать реальный запуск.
 
 ### Entry
 - **Path:** `crm/access/`

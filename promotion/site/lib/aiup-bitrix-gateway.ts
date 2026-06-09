@@ -9,9 +9,28 @@ import {
 
 export const AIUP_GATEWAY_ENDPOINT_PATH = "/api/aiup/bitrix-test"
 export const AIUP_GATEWAY_MODE_REQUIRED = "test"
+export const AIUP_GATEWAY_FIRST_REAL_TEST_MODE = "first_real_test"
 export const AIUP_GATEWAY_MANUAL_GATE_REQUIRED = "test-only-enabled"
 export const AIUP_GATEWAY_TEST_PHONE = "+79990000000"
 export const AIUP_GATEWAY_MAX_DAILY_DEFAULT = 5
+export const AIUP_GATEWAY_ALLOWED_MODES = [
+  AIUP_GATEWAY_MODE_REQUIRED,
+  AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+] as const
+export const AIUP_GATEWAY_BLOCKED_MODES = ["live", "prod", "production"] as const
+export const AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS = [
+  "legokuhni.ru",
+  "kuhnihit.ru",
+  "rosta-mebel.ru",
+  "dekol-mebel.ru",
+  "ukuhni.ru",
+] as const
+export const AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS = [
+  "ростов-на-дону",
+  "ростовская область",
+  "ростов-на-дону / ростовская область",
+  "ростов-на-дону, ростовская область",
+] as const
 
 export const AIUP_GATEWAY_BITRIX_CATEGORY_NAME = "AI-UP / Test"
 export const AIUP_GATEWAY_BITRIX_STAGE_NAME = "Новый AI-UP контакт"
@@ -100,7 +119,7 @@ type GatewayEnv = {
   bitrixWebhookUrl: string
   dailyLimit: number
   manualGate: string
-  mode: string
+  mode: (typeof AIUP_GATEWAY_ALLOWED_MODES)[number]
 }
 
 type GatewayLogEntry = {
@@ -183,6 +202,31 @@ function normalizePhone(value: string) {
 
 function lowerSafe(value: unknown) {
   return cleanString(value).toLowerCase()
+}
+
+function normalizeRegion(value: string) {
+  return lowerSafe(value).replace(/ё/g, "е").replace(/\s*\/\s*/g, " / ").replace(/\s+/g, " ").trim()
+}
+
+function normalizeSourceHost(value: string) {
+  const cleaned = cleanString(value)
+
+  if (!cleaned) {
+    return ""
+  }
+
+  const candidates = cleaned.includes("://") ? [cleaned] : [cleaned, `https://${cleaned}`]
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = new URL(candidate)
+      return parsed.hostname.toLowerCase().replace(/^www\./, "")
+    } catch {
+      continue
+    }
+  }
+
+  return ""
 }
 
 function maskPhone(phone: string) {
@@ -294,7 +338,7 @@ function parsePositiveInteger(value: string) {
 
 function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
   const env = deps.env || {}
-  const mode = cleanString(env.mode ?? process.env.AIUP_GATEWAY_MODE)
+  const mode = lowerSafe(env.mode ?? process.env.AIUP_GATEWAY_MODE)
   const manualGate = cleanString(env.manualGate ?? process.env.AIUP_GATEWAY_MANUAL_GATE)
   const approvalToken = cleanString(env.approvalToken ?? process.env.AIUP_GATEWAY_APPROVAL_TOKEN)
   const bitrixWebhookUrl = cleanString(
@@ -305,8 +349,8 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
   )
   const dailyLimit = parsePositiveInteger(dailyLimitRaw)
 
-  if (mode !== AIUP_GATEWAY_MODE_REQUIRED) {
-    throw new Error("AIUP_GATEWAY_MODE must be test")
+  if (!AIUP_GATEWAY_ALLOWED_MODES.includes(mode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number])) {
+    throw new Error("AIUP_GATEWAY_MODE must be test or first_real_test")
   }
 
   if (manualGate !== AIUP_GATEWAY_MANUAL_GATE_REQUIRED) {
@@ -330,8 +374,44 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
     bitrixWebhookUrl,
     dailyLimit,
     manualGate,
-    mode,
+    mode: mode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number],
   }
+}
+
+function validatePayloadForMode(payload: AiupGatewayNormalizedPayload, mode: GatewayEnv["mode"]) {
+  if (mode === AIUP_GATEWAY_MODE_REQUIRED) {
+    if (payload.phone !== AIUP_GATEWAY_TEST_PHONE) {
+      return "Only the dedicated test phone is allowed"
+    }
+
+    return null
+  }
+
+  const normalizedSourceHost = normalizeSourceHost(payload.source_url_or_phone)
+  if (
+    !normalizedSourceHost ||
+    !AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS.includes(
+      normalizedSourceHost as (typeof AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS)[number],
+    )
+  ) {
+    return "Only the approved first_real_test source sites are allowed"
+  }
+
+  const normalizedRegion = normalizeRegion(payload.region)
+  if (
+    !AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS.includes(
+      normalizedRegion as (typeof AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS)[number],
+    )
+  ) {
+    return "Only the approved first_real_test region is allowed"
+  }
+
+  const phoneDigits = payload.phone.replace(/\D/g, "")
+  if (phoneDigits.length < 11) {
+    return "Phone must contain at least 11 digits in first_real_test mode"
+  }
+
+  return null
 }
 
 function encodeBracketedParams(
@@ -610,13 +690,43 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    const forbiddenMode = lowerSafe(normalized.mode)
-    if (forbiddenMode !== "test") {
+    const requestedMode = lowerSafe(normalized.mode)
+    if (AIUP_GATEWAY_BLOCKED_MODES.includes(requestedMode as (typeof AIUP_GATEWAY_BLOCKED_MODES)[number])) {
       return {
         ok: false,
         status: 403,
         body: {
-          error: "Only mode=test is allowed. live/prod/production are blocked.",
+          error: "live/prod/production are blocked.",
+          ignored_fields: picked.ignored,
+          log_entry: logEntry,
+          ok: false,
+          request_id: requestId,
+          sanitized_payload: sanitized,
+        },
+      }
+    }
+
+    if (!AIUP_GATEWAY_ALLOWED_MODES.includes(requestedMode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number])) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "Only mode=test or mode=first_real_test is allowed.",
+          ignored_fields: picked.ignored,
+          log_entry: logEntry,
+          ok: false,
+          request_id: requestId,
+          sanitized_payload: sanitized,
+        },
+      }
+    }
+
+    if (requestedMode !== env.mode) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "Payload mode does not match configured gateway mode.",
           ignored_fields: picked.ignored,
           log_entry: logEntry,
           ok: false,
@@ -641,12 +751,13 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    if (normalized.phone !== AIUP_GATEWAY_TEST_PHONE) {
+    const modeValidationError = validatePayloadForMode(normalized, env.mode)
+    if (modeValidationError) {
       return {
         ok: false,
         status: 403,
         body: {
-          error: "Only the dedicated test phone is allowed",
+          error: modeValidationError,
           ignored_fields: picked.ignored,
           log_entry: logEntry,
           ok: false,
@@ -938,7 +1049,10 @@ export async function verifyAiupGatewayBitrixDeal(args: {
   }
 }
 
-export function buildAiupGatewayTestPayload(approvalToken: string) {
+export function buildAiupGatewayTestPayload(
+  approvalToken: string,
+  overrides: Partial<Record<AllowedFieldName, string>> = {},
+) {
   return {
     approval_token: approvalToken,
     batch_id: "aiup-gateway-test-2026-06-08-001",
@@ -953,5 +1067,6 @@ export function buildAiupGatewayTestPayload(approvalToken: string) {
     source_type: "test_only_gateway",
     source_url_or_phone: "https://example.com/gateway-test",
     status: "test_only_gateway",
+    ...overrides,
   } satisfies Record<AllowedFieldName, string>
 }

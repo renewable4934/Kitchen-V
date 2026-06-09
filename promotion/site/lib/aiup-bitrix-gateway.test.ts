@@ -6,6 +6,9 @@ import {
   AIUP_GATEWAY_BITRIX_CATEGORY_NAME,
   AIUP_GATEWAY_BITRIX_SOURCE_NAME,
   AIUP_GATEWAY_BITRIX_STAGE_NAME,
+  AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS,
+  AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS,
+  AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
   AIUP_GATEWAY_FIELD_LABELS,
   AIUP_GATEWAY_MANUAL_GATE_REQUIRED,
   AIUP_GATEWAY_MODE_REQUIRED,
@@ -52,7 +55,7 @@ function createGatewayTestHarness(options?: {
     bitrixWebhookUrl: string
     dailyLimit: number
     manualGate: string
-    mode: string
+    mode: typeof AIUP_GATEWAY_MODE_REQUIRED | typeof AIUP_GATEWAY_FIRST_REAL_TEST_MODE
   }>
   sourceRows?: Array<Record<string, string>>
   stageRows?: Array<Record<string, string>>
@@ -155,6 +158,8 @@ function createGatewayTestHarness(options?: {
     throw new Error(`Unexpected method ${method}`)
   }) as typeof fetch
 
+  const mode = options?.overrideEnv?.mode ?? AIUP_GATEWAY_MODE_REQUIRED
+
   return {
     capturedRequests,
     createdDeals,
@@ -167,7 +172,7 @@ function createGatewayTestHarness(options?: {
         bitrixWebhookUrl: "https://example.invalid/rest/13/fake/",
         dailyLimit: 5,
         manualGate: AIUP_GATEWAY_MANUAL_GATE_REQUIRED,
-        mode: AIUP_GATEWAY_MODE_REQUIRED,
+        mode,
         ...options?.overrideEnv,
       },
       fetchImpl: fakeFetch,
@@ -221,6 +226,24 @@ test("rejects any non-test mode", async () => {
 
   assert.equal(result.ok, false)
   assert.equal(result.status, 403)
+})
+
+test("rejects when payload mode does not match configured gateway mode", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const payload = buildAiupGatewayTestPayload("test-approval-token")
+
+  const result = await processAiupBitrixGatewayRequest(payload, {
+    ...harness.deps,
+    performWrite: false,
+  })
+
+  assert.equal(result.ok, false)
+  assert.equal(result.status, 403)
+  assert.equal(result.body.error.includes("does not match"), true)
 })
 
 test("rejects wrong approval token", async () => {
@@ -298,6 +321,87 @@ test("rejects non-test phone", async () => {
 
   assert.equal(result.ok, false)
   assert.equal(result.status, 403)
+})
+
+test("accepts first_real_test dry run with allowlisted source and region", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      dailyLimit: 15,
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const payload = buildAiupGatewayTestPayload("test-approval-token", {
+    batch_id: "aiup-first-real-test-2026-06-09-001",
+    channel: "first_real_test",
+    mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    name: "TEST / AI-UP / first real test / не обрабатывать",
+    phone: "+79991112233",
+    source_name: "legokuhni.ru",
+    source_type: "site_competitor",
+    source_url_or_phone: `https://${AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS[0]}/`,
+    region: "Ростов-на-Дону / Ростовская область",
+    status: "first_real_test",
+  })
+
+  const result = await processAiupBitrixGatewayRequest(payload, {
+    ...harness.deps,
+    performWrite: false,
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.body.result, "dry_run")
+  assert.equal(result.body.log_entry.validationResult, "accepted")
+  assert.equal(result.body.check_summary.daily_limit_remaining, 15)
+})
+
+test("rejects first_real_test source outside allowlist", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const payload = buildAiupGatewayTestPayload("test-approval-token", {
+    mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    phone: "+79991112233",
+    source_type: "site_competitor",
+    source_url_or_phone: "https://example.com/not-allowed",
+    region: AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS[2],
+    status: "first_real_test",
+  })
+
+  const result = await processAiupBitrixGatewayRequest(payload, {
+    ...harness.deps,
+    performWrite: false,
+  })
+
+  assert.equal(result.ok, false)
+  assert.equal(result.status, 403)
+  assert.equal(result.body.error.includes("source sites"), true)
+})
+
+test("rejects first_real_test region outside allowlist", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const payload = buildAiupGatewayTestPayload("test-approval-token", {
+    mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    phone: "+79991112233",
+    source_type: "site_competitor",
+    source_url_or_phone: `https://${AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS[1]}`,
+    region: "Краснодар",
+    status: "first_real_test",
+  })
+
+  const result = await processAiupBitrixGatewayRequest(payload, {
+    ...harness.deps,
+    performWrite: false,
+  })
+
+  assert.equal(result.ok, false)
+  assert.equal(result.status, 403)
+  assert.equal(result.body.error.includes("region"), true)
 })
 
 test("ignores extra payload fields and accepts dry run", async () => {
