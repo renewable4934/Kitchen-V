@@ -121,7 +121,22 @@ sync_caddy_upstream() {
 tar -xzf "$RELEASE_ARCHIVE" -C "$RELEASE_DIR"
 
 if [ -n "$ENV_FILE" ] && [ -f "$ENV_FILE" ]; then
-  install -m 600 "$ENV_FILE" "${SHARED_DIR}/.env"
+  if [ -f "${SHARED_DIR}/.env" ]; then
+    merged_env="$(mktemp)"
+    cp "$ENV_FILE" "$merged_env"
+    for key in AIUP_GATEWAY_APPROVAL_TOKEN BITRIX24_TEST_CRM_WEBHOOK_URL; do
+      if ! grep -q "^${key}=" "$merged_env"; then
+        existing_value="$(grep "^${key}=" "${SHARED_DIR}/.env" | tail -n 1 || true)"
+        if [ -n "$existing_value" ]; then
+          printf '%s\n' "$existing_value" >> "$merged_env"
+        fi
+      fi
+    done
+    install -m 600 "$merged_env" "${SHARED_DIR}/.env"
+    rm -f "$merged_env"
+  else
+    install -m 600 "$ENV_FILE" "${SHARED_DIR}/.env"
+  fi
 fi
 
 if [ -f "${SHARED_DIR}/.env" ]; then
