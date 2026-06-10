@@ -14,6 +14,7 @@ import {
   AIUP_GATEWAY_MODE_REQUIRED,
   AIUP_GATEWAY_TEST_PHONE,
   buildAiupGatewayTestPayload,
+  processAiupNativeWebhookRequest,
   processAiupBitrixGatewayRequest,
 } from "./aiup-bitrix-gateway.ts"
 
@@ -352,6 +353,95 @@ test("accepts first_real_test dry run with allowlisted source and region", async
   assert.equal(result.body.result, "dry_run")
   assert.equal(result.body.log_entry.validationResult, "accepted")
   assert.equal(result.body.check_summary.daily_limit_remaining, 15)
+})
+
+test("accepts AI-UP native webhook dry run for allowlisted source", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      dailyLimit: 15,
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const originalNativeGate = process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED
+  process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED = "enabled"
+  const nativeTestPhone = ["7", "999", "111", "22", "33"].join("")
+
+  try {
+    const result = await processAiupNativeWebhookRequest(
+      {
+        Контакты: [
+          {
+            Дата: "11.06.2026",
+            "Тип взаимодействия": "Посещение",
+            Источник: "legokuhni.ru",
+            Телефон: nativeTestPhone,
+            Канал: "Vault Core",
+          },
+        ],
+      },
+      {
+        ...harness.deps,
+        performWrite: false,
+      },
+    )
+
+    assert.equal(result.ok, true)
+    assert.equal(result.body.ok, true)
+    assert.equal(result.body.result, "dry_run")
+    assert.equal(result.body.contacts_total, 1)
+    assert.equal(result.body.contacts_dry_run, 1)
+    assert.equal(JSON.stringify(result.body).includes(nativeTestPhone), false)
+  } finally {
+    if (originalNativeGate === undefined) {
+      delete process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED
+    } else {
+      process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED = originalNativeGate
+    }
+  }
+})
+
+test("AI-UP native webhook does not write disallowed source", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      dailyLimit: 15,
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const originalNativeGate = process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED
+  process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED = "enabled"
+  const nativeTestPhone = ["7", "999", "111", "22", "33"].join("")
+
+  try {
+    const result = await processAiupNativeWebhookRequest(
+      {
+        Контакты: [
+          {
+            Дата: "11.06.2026",
+            "Тип взаимодействия": "Посещение",
+            Источник: "example.com",
+            Телефон: nativeTestPhone,
+            Канал: "Vault Core",
+          },
+        ],
+      },
+      {
+        ...harness.deps,
+        performWrite: true,
+      },
+    )
+
+    assert.equal(result.ok, true)
+    assert.equal(result.body.ok, true)
+    assert.equal(result.body.result, "verification_only")
+    assert.equal(result.body.contacts_rejected, 1)
+    assert.equal(harness.capturedRequests.some((request) => request.method === "crm.deal.add"), false)
+  } finally {
+    if (originalNativeGate === undefined) {
+      delete process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED
+    } else {
+      process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED = originalNativeGate
+    }
+  }
 })
 
 test("rejects first_real_test source outside allowlist", async () => {

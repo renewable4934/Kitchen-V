@@ -120,6 +120,7 @@ type GatewayEnv = {
   dailyLimit: number
   manualGate: string
   mode: (typeof AIUP_GATEWAY_ALLOWED_MODES)[number]
+  nativeWebhookEnabled: boolean
 }
 
 type GatewayLogEntry = {
@@ -180,6 +181,37 @@ type GatewayResponse =
       status: 400 | 403 | 409 | 429 | 500
     }
 
+type AiupNativeContact = {
+  "Дата"?: unknown
+  "Тип взаимодействия"?: unknown
+  "Источник"?: unknown
+  "Телефон"?: unknown
+  "Канал"?: unknown
+}
+
+type AiupNativeWebhookInput = {
+  "Контакты"?: unknown
+}
+
+type AiupNativeWebhookResponse = {
+  ok: true
+  request_id: string
+  result: "dry_run" | "native_webhook_processed" | "verification_only"
+  contacts_total: number
+  contacts_created: number
+  contacts_duplicate: number
+  contacts_rejected: number
+  contacts_dry_run: number
+  items: Array<{
+    ok: boolean
+    result: string
+    source_name: string
+    phone_masked: string
+    error?: string
+    created_deal_id?: string
+  }>
+}
+
 type GatewayDependencies = {
   appendJournalRecord?: typeof appendAiupGatewayJournalRecord
   bitrixWebhookUrl?: string
@@ -238,6 +270,14 @@ function maskPhone(phone: string) {
   }
 
   return `+${digits.slice(0, 4)}******${digits.slice(-2)}`
+}
+
+function isAiupNativeWebhookInput(input: AiupGatewayInput): input is AiupNativeWebhookInput {
+  return Array.isArray((input as AiupNativeWebhookInput)["Контакты"])
+}
+
+function resolveNativeWebhookEnabled(envValue: unknown) {
+  return cleanString(envValue).toLowerCase() === "enabled"
 }
 
 function pickAllowedFields(input: AiupGatewayInput) {
@@ -347,6 +387,7 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
   const dailyLimitRaw = cleanString(
     String(env.dailyLimit ?? process.env.AIUP_GATEWAY_DAILY_LIMIT ?? AIUP_GATEWAY_MAX_DAILY_DEFAULT),
   )
+  const nativeWebhookEnabled = resolveNativeWebhookEnabled(process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED)
   const dailyLimit = parsePositiveInteger(dailyLimitRaw)
 
   if (!AIUP_GATEWAY_ALLOWED_MODES.includes(mode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number])) {
@@ -375,6 +416,172 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
     dailyLimit,
     manualGate,
     mode: mode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number],
+    nativeWebhookEnabled,
+  }
+}
+
+function buildNativeWebhookBatchId(now: Date) {
+  return `aiup-native-${buildDayKey(now)}`
+}
+
+function normalizeAiupNativeContact(
+  contact: AiupNativeContact,
+  env: GatewayEnv,
+  now: Date,
+): Record<AllowedFieldName, string> {
+  const sourceName = cleanString(contact["Источник"])
+  const date = cleanString(contact["Дата"])
+  const interactionType = cleanString(contact["Тип взаимодействия"])
+  const channel = cleanString(contact["Канал"]) || "AI-UP"
+
+  return {
+    approval_token: env.approvalToken,
+    batch_id: buildNativeWebhookBatchId(now),
+    channel,
+    manager_comment: [`AI-UP native webhook`, interactionType && `Тип: ${interactionType}`, date && `Дата: ${date}`]
+      .filter(Boolean)
+      .join("; "),
+    mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    name: `AI-UP / ${sourceName || "unknown source"}`,
+    phone: cleanString(contact["Телефон"]),
+    region: "Ростовская область",
+    source_name: sourceName,
+    source_type: "site_competitor",
+    source_url_or_phone: sourceName,
+    status: "first_real_test",
+  }
+}
+
+function buildNativeVerificationItem(contact: AiupNativeContact, error: string) {
+  return {
+    error,
+    ok: false,
+    phone_masked: maskPhone(cleanString(contact["Телефон"])),
+    result: "verification_only",
+    source_name: cleanString(contact["Источник"]),
+  }
+}
+
+export async function processAiupNativeWebhookRequest(
+  input: AiupGatewayInput,
+  options: GatewayDependencies & { performWrite: boolean },
+): Promise<{ body: AiupNativeWebhookResponse | { ok: false; error: string; request_id: string }; ok: boolean; status: number }> {
+  const requestId = options.randomUUID ? options.randomUUID() : crypto.randomUUID()
+  const now = (options.now || (() => new Date()))()
+
+  try {
+    const env = resolveGatewayEnv(options)
+
+    if (!env.nativeWebhookEnabled) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED must be enabled",
+          ok: false,
+          request_id: requestId,
+        },
+      }
+    }
+
+    if (env.mode !== AIUP_GATEWAY_FIRST_REAL_TEST_MODE) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "AI-UP native webhook requires first_real_test gateway mode",
+          ok: false,
+          request_id: requestId,
+        },
+      }
+    }
+
+    if (!isAiupNativeWebhookInput(input)) {
+      return {
+        ok: false,
+        status: 400,
+        body: {
+          error: "Invalid AI-UP native webhook payload",
+          ok: false,
+          request_id: requestId,
+        },
+      }
+    }
+
+    const contacts = input["Контакты"] as AiupNativeContact[]
+    const items: AiupNativeWebhookResponse["items"] = []
+
+    for (const contact of contacts) {
+      const normalized = normalizeAiupNativeContact(contact, env, now)
+      const sourceHost = normalizeSourceHost(normalized.source_url_or_phone)
+
+      if (
+        !sourceHost ||
+        !AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS.includes(
+          sourceHost as (typeof AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS)[number],
+        )
+      ) {
+        items.push(buildNativeVerificationItem(contact, "source_not_allowlisted"))
+        continue
+      }
+
+      const result = await processAiupBitrixGatewayRequest(normalized, options)
+
+      if (result.ok) {
+        items.push({
+          created_deal_id: result.body.bitrix.created_deal_id,
+          ok: true,
+          phone_masked: result.body.sanitized_payload.phone_masked,
+          result: result.body.result,
+          source_name: result.body.sanitized_payload.source_name,
+        })
+      } else {
+        items.push({
+          error: result.body.error,
+          ok: false,
+          phone_masked: sanitizePayload(toNormalizedPayload(normalized)).phone_masked,
+          result: "rejected",
+          source_name: normalized.source_name,
+        })
+      }
+    }
+
+    const contactsCreated = items.filter((item) => item.result === "created").length
+    const contactsDuplicate = items.filter((item) => item.result === "duplicate").length
+    const contactsDryRun = items.filter((item) => item.result === "dry_run").length
+    const contactsRejected = items.filter((item) => !item.ok).length
+    const resultType =
+      contactsCreated > 0 || contactsDuplicate > 0
+        ? "native_webhook_processed"
+        : contactsDryRun > 0
+          ? "dry_run"
+          : "verification_only"
+
+    return {
+      ok: true,
+      status: 200,
+      body: {
+        contacts_created: contactsCreated,
+        contacts_dry_run: contactsDryRun,
+        contacts_duplicate: contactsDuplicate,
+        contacts_rejected: contactsRejected,
+        contacts_total: contacts.length,
+        items,
+        ok: true,
+        request_id: requestId,
+        result: resultType,
+      },
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      status: 500,
+      body: {
+        error: error instanceof Error ? error.message : "native_webhook_failed",
+        ok: false,
+        request_id: requestId,
+      },
+    }
   }
 }
 
