@@ -114,19 +114,20 @@ jobs:
           mkdir -p "$HOME/.ssh"
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
           chmod 600 "$HOME/.ssh/id_ed25519"
-          ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> "$HOME/.ssh/known_hosts"
+          touch "$HOME/.ssh/known_hosts"
+          ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> "$HOME/.ssh/known_hosts" || true
 
       - name: Upload release package
         run: |
           set -euo pipefail
-          scp -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site-release.tgz" "${SSH_USER}@${SSH_HOST}:/tmp/site-release.tgz"
-          scp -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site.env" "${SSH_USER}@${SSH_HOST}:/tmp/site.env"
-          scp -P "${SSH_PORT:-22}" "promotion/site/ops/deploy-release.sh" "${SSH_USER}@${SSH_HOST}:/tmp/deploy-release.sh"
+          scp -o StrictHostKeyChecking=accept-new -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site-release.tgz" "${SSH_USER}@${SSH_HOST}:/tmp/site-release.tgz"
+          scp -o StrictHostKeyChecking=accept-new -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site.env" "${SSH_USER}@${SSH_HOST}:/tmp/site.env"
+          scp -o StrictHostKeyChecking=accept-new -P "${SSH_PORT:-22}" "promotion/site/ops/deploy-release.sh" "${SSH_USER}@${SSH_HOST}:/tmp/deploy-release.sh"
 
       - name: Activate release on server
         run: |
           set -euo pipefail
-          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
+          ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
             "chmod +x /tmp/deploy-release.sh && APP_DIR='${APP_DIR}' SERVICE_NAME='${SERVICE_NAME}' APP_PORT='${APP_PORT}' RELEASE_ARCHIVE='/tmp/site-release.tgz' ENV_FILE='/tmp/site.env' bash /tmp/deploy-release.sh"
 
       - name: Check public health endpoint
