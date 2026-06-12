@@ -2,6 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import {
+  AIUP_GATEWAY_ALLOWED_MODES,
   AIUP_GATEWAY_ALLOWED_FIELDS,
   AIUP_GATEWAY_BITRIX_CATEGORY_NAME,
   AIUP_GATEWAY_BITRIX_SOURCE_NAME,
@@ -20,6 +21,7 @@ import {
 
 type StubJournalRecord = {
   batchId: string
+  bitrixContactId?: string | null
   bitrixDealId?: string | null
   createdAt: string
   dayKey: string
@@ -32,6 +34,7 @@ type StubJournalRecord = {
 }
 
 type StubDeal = Record<string, string>
+type StubContact = Record<string, string | Array<Record<string, string>>>
 
 function createFakeBitrixFields() {
   return Object.fromEntries(
@@ -50,13 +53,16 @@ function createFakeBitrixFields() {
 
 function createGatewayTestHarness(options?: {
   existingDeals?: StubDeal[]
+  existingContacts?: StubContact[]
   journalRecords?: Array<Record<string, string>>
   overrideEnv?: Partial<{
     approvalToken: string
     bitrixWebhookUrl: string
     dailyLimit: number
+    firstRealApprovalToken: string
+    limitedBatchEnabled: boolean
     manualGate: string
-    mode: typeof AIUP_GATEWAY_MODE_REQUIRED | typeof AIUP_GATEWAY_FIRST_REAL_TEST_MODE
+    mode: (typeof AIUP_GATEWAY_ALLOWED_MODES)[number]
   }>
   sourceRows?: Array<Record<string, string>>
   stageRows?: Array<Record<string, string>>
@@ -64,9 +70,11 @@ function createGatewayTestHarness(options?: {
 }) {
   const capturedRequests: Array<{ method: string; body: string }> = []
   const createdDeals = options?.existingDeals ? [...options.existingDeals] : []
+  const createdContacts = options?.existingContacts ? [...options.existingContacts] : []
   const journal: { records: StubJournalRecord[] } = {
     records: (options?.journalRecords || []).map((record) => ({
       batchId: record.batchId,
+      bitrixContactId: record.bitrixContactId ?? null,
       bitrixDealId: record.bitrixDealId ?? null,
       createdAt: record.createdAt,
       dayKey: record.dayKey,
@@ -88,7 +96,7 @@ function createGatewayTestHarness(options?: {
 
     if (method === "crm.dealcategory.list") {
       return Response.json({
-        result: options?.categories || [{ ID: "1", NAME: AIUP_GATEWAY_BITRIX_CATEGORY_NAME, SORT: "20" }],
+        result: options?.categories || [{ ID: "0", NAME: AIUP_GATEWAY_BITRIX_CATEGORY_NAME, SORT: "10" }],
       })
     }
 
@@ -104,12 +112,12 @@ function createGatewayTestHarness(options?: {
         })
       }
 
-      if (entityId === "DEAL_STAGE_1") {
+      if (entityId === "DEAL_STAGE") {
         return Response.json({
           result:
             options?.stageRows || [
-              { ENTITY_ID: "DEAL_STAGE_1", ID: "207", NAME: AIUP_GATEWAY_BITRIX_STAGE_NAME, STATUS_ID: "C1:NEW" },
-              { ENTITY_ID: "DEAL_STAGE_1", ID: "209", NAME: "Первый звонок", STATUS_ID: "C1:PREPARATION" },
+              { ENTITY_ID: "DEAL_STAGE", ID: "107", NAME: AIUP_GATEWAY_BITRIX_STAGE_NAME, SORT: "10", STATUS_ID: "NEW" },
+              { ENTITY_ID: "DEAL_STAGE", ID: "109", NAME: "Связь установлена", SORT: "20", STATUS_ID: "PREPARATION" },
             ],
         })
       }
@@ -125,11 +133,62 @@ function createGatewayTestHarness(options?: {
       return Response.json({ result: createdDeals })
     }
 
+    if (method === "crm.duplicate.findbycomm") {
+      const entityType = params.get("entity_type")
+      const value = (params.getAll("values[]")[0] || "").replace(/[^\d+]/g, "")
+      if (entityType === "LEAD") {
+        return Response.json({ result: { LEAD: [] } })
+      }
+
+      if (entityType === "CONTACT") {
+        const matches = createdContacts
+          .filter((contact) =>
+            ((contact.PHONE as Array<Record<string, string>> | undefined) || []).some(
+              (phone) => (phone.VALUE || "").replace(/[^\d+]/g, "") === value,
+            ),
+          )
+          .map((contact) => Number(contact.ID))
+        return Response.json({ result: { CONTACT: matches } })
+      }
+    }
+
+    if (method === "crm.contact.add") {
+      const nextId = String(createdContacts.length + 200)
+      createdContacts.push({
+        COMMENTS: params.get("fields[COMMENTS]") || "",
+        ID: nextId,
+        LAST_NAME: params.get("fields[LAST_NAME]") || "",
+        NAME: params.get("fields[NAME]") || "",
+        PHONE: [
+          {
+            VALUE: params.get("fields[PHONE][0][VALUE]") || "",
+            VALUE_TYPE: params.get("fields[PHONE][0][VALUE_TYPE]") || "WORK",
+          },
+        ],
+        SOURCE_ID: params.get("fields[SOURCE_ID]") || "",
+      })
+      return Response.json({ result: Number(nextId) })
+    }
+
+    if (method === "crm.contact.get") {
+      return Response.json({
+        result:
+          createdContacts.find((contact) => String(contact.ID) === params.get("id")) || {
+            ID: params.get("id") || "",
+            NAME: "TEST",
+            LAST_NAME: "CONTACT",
+            PHONE: [],
+            SOURCE_ID: "1",
+          },
+      })
+    }
+
     if (method === "crm.deal.add") {
       const nextId = String(createdDeals.length + 100)
       createdDeals.push({
         CATEGORY_ID: params.get("fields[CATEGORY_ID]") || "",
         COMMENTS: params.get("fields[COMMENTS]") || "",
+        CONTACT_ID: params.get("fields[CONTACT_ID]") || "",
         ID: nextId,
         SOURCE_ID: params.get("fields[SOURCE_ID]") || "",
         STAGE_ID: params.get("fields[STAGE_ID]") || "",
@@ -143,10 +202,11 @@ function createGatewayTestHarness(options?: {
       return Response.json({
         result:
           createdDeals.find((deal) => deal.ID === params.get("id")) || {
-            CATEGORY_ID: "1",
+            CATEGORY_ID: "0",
+            CONTACT_ID: "",
             ID: params.get("id") || "",
             SOURCE_ID: "1",
-            STAGE_ID: "C1:NEW",
+            STAGE_ID: "NEW",
             TITLE: "TEST",
           },
       })
@@ -159,10 +219,11 @@ function createGatewayTestHarness(options?: {
     throw new Error(`Unexpected method ${method}`)
   }) as typeof fetch
 
-  const mode = options?.overrideEnv?.mode ?? AIUP_GATEWAY_MODE_REQUIRED
+  const mode: (typeof AIUP_GATEWAY_ALLOWED_MODES)[number] = options?.overrideEnv?.mode ?? AIUP_GATEWAY_MODE_REQUIRED
 
   return {
     capturedRequests,
+    createdContacts,
     createdDeals,
     deps: {
       appendJournalRecord: async (record: StubJournalRecord) => {
@@ -172,6 +233,8 @@ function createGatewayTestHarness(options?: {
         approvalToken: "test-approval-token",
         bitrixWebhookUrl: "https://example.invalid/rest/13/fake/",
         dailyLimit: 5,
+        firstRealApprovalToken: "first-real-token",
+        limitedBatchEnabled: false,
         manualGate: AIUP_GATEWAY_MANUAL_GATE_REQUIRED,
         mode,
         ...options?.overrideEnv,
@@ -331,7 +394,7 @@ test("accepts first_real_test dry run with allowlisted source and region", async
       mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     },
   })
-  const payload = buildAiupGatewayTestPayload("test-approval-token", {
+  const payload = buildAiupGatewayTestPayload("first-real-token", {
     batch_id: "aiup-first-real-test-2026-06-09-001",
     channel: "first_real_test",
     mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
@@ -450,7 +513,7 @@ test("rejects first_real_test source outside allowlist", async () => {
       mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     },
   })
-  const payload = buildAiupGatewayTestPayload("test-approval-token", {
+  const payload = buildAiupGatewayTestPayload("first-real-token", {
     mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     phone: "+79991112233",
     source_type: "site_competitor",
@@ -475,7 +538,7 @@ test("rejects first_real_test region outside allowlist", async () => {
       mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     },
   })
-  const payload = buildAiupGatewayTestPayload("test-approval-token", {
+  const payload = buildAiupGatewayTestPayload("first-real-token", {
     mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     phone: "+79991112233",
     source_type: "site_competitor",
@@ -510,7 +573,8 @@ test("ignores extra payload fields and accepts dry run", async () => {
   assert.equal(result.body.result, "dry_run")
   assert.deepEqual(result.body.check_summary.ignored_fields, ["extra_field"])
   assert.equal(result.body.check_summary.duplicate_result, "none")
-  assert.equal(harness.capturedRequests.length, 0)
+  assert.equal(harness.capturedRequests.some((request) => request.method === "crm.deal.add"), false)
+  assert.equal(harness.capturedRequests.some((request) => request.method === "crm.contact.add"), false)
   assert.ok(!JSON.stringify(result.body).includes("test-approval-token"))
   assert.equal(result.body.sanitized_payload.phone_masked, "+7999******00")
 })
@@ -529,12 +593,17 @@ test("forwards only allowlisted fields on write", async () => {
 
   assert.equal(result.ok, true)
   const addRequest = harness.capturedRequests.find((request) => request.method === "crm.deal.add")
+  const contactAddRequest = harness.capturedRequests.find((request) => request.method === "crm.contact.add")
   assert.ok(addRequest)
+  assert.ok(contactAddRequest)
   assert.equal(addRequest?.body.includes("extra_field"), false)
   assert.equal(result.body.bitrix.category_name, AIUP_GATEWAY_BITRIX_CATEGORY_NAME)
   assert.equal(result.body.bitrix.source_name, AIUP_GATEWAY_BITRIX_SOURCE_NAME)
   assert.equal(result.body.bitrix.stage_name, AIUP_GATEWAY_BITRIX_STAGE_NAME)
-  assert.equal(JSON.stringify(result.body).includes("Продажи"), false)
+  assert.equal(result.body.bitrix.category_id, "0")
+  assert.equal(result.body.bitrix.contact_action, "created")
+  assert.ok(result.body.bitrix.contact_id)
+  assert.equal(result.body.bitrix.contact_id, result.body.bitrix.created_contact_id)
 })
 
 test("duplicate payload does not create second deal", async () => {
@@ -555,6 +624,7 @@ test("duplicate payload does not create second deal", async () => {
   assert.equal(second.ok, true)
   assert.equal(second.body.result, "duplicate")
   assert.equal(harness.capturedRequests.filter((request) => request.method === "crm.deal.add").length, 1)
+  assert.equal(harness.capturedRequests.filter((request) => request.method === "crm.contact.add").length, 1)
 })
 
 test("daily limit works", async () => {
@@ -583,9 +653,12 @@ test("daily limit works", async () => {
   assert.equal(result.status, 429)
 })
 
-test("refuses to create a deal when AI-UP / Test category lookup fails", async () => {
+test("uses first sales stage when dedicated AI-UP stage is unavailable", async () => {
   const harness = createGatewayTestHarness({
-    categories: [{ ID: "0", NAME: "Продажи", SORT: "10" }],
+    stageRows: [
+      { ENTITY_ID: "DEAL_STAGE", ID: "101", NAME: "Новый лид", SORT: "10", STATUS_ID: "NEW" },
+      { ENTITY_ID: "DEAL_STAGE", ID: "103", NAME: "Связь установлена", SORT: "20", STATUS_ID: "PREPARATION" },
+    ],
   })
   const payload = buildAiupGatewayTestPayload("test-approval-token")
 
@@ -594,10 +667,38 @@ test("refuses to create a deal when AI-UP / Test category lookup fails", async (
     performWrite: true,
   })
 
-  assert.equal(result.ok, false)
-  assert.equal(result.status, 500)
-  assert.equal(result.body.error.includes("AI-UP / Test category"), true)
-  assert.equal(harness.capturedRequests.some((request) => request.method === "crm.deal.add"), false)
+  assert.equal(result.ok, true)
+  assert.equal(result.body.bitrix.category_name, AIUP_GATEWAY_BITRIX_CATEGORY_NAME)
+  assert.equal(result.body.bitrix.stage_name, "Новый лид")
+  assert.equal(result.body.bitrix.stage_id, "NEW")
+  assert.equal(harness.capturedRequests.some((request) => request.method === "crm.deal.add"), true)
+})
+
+test("creates deal when AI-UP custom fields are unavailable", async () => {
+  const harness = createGatewayTestHarness()
+  const payload = buildAiupGatewayTestPayload("test-approval-token")
+
+  const originalCreateFakeBitrixFields = createFakeBitrixFields
+  void originalCreateFakeBitrixFields
+  harness.capturedRequests.length = 0
+  const fakeFetchWithoutFields: typeof fetch = (async (input, init) => {
+    const url = String(input)
+    const method = url.match(/\/([^/]+)\.json$/)?.[1] || "unknown"
+    if (method === "crm.deal.fields") {
+      return Response.json({ result: {} })
+    }
+    return harness.deps.fetchImpl(input, init)
+  }) as typeof fetch
+
+  const result = await processAiupBitrixGatewayRequest(payload, {
+    ...harness.deps,
+    fetchImpl: fakeFetchWithoutFields,
+    performWrite: true,
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.body.result, "created")
+  assert.deepEqual(result.body.mapping.field_codes, {})
 })
 
 test("result does not expose approval token or full non-masked logging fields", async () => {
@@ -621,6 +722,7 @@ test("gateway constants do not drift from allowlist contract", async () => {
     "mode",
     "approval_token",
     "batch_id",
+    "imported_at",
     "name",
     "phone",
     "source_type",

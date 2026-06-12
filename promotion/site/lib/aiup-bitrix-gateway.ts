@@ -1,4 +1,4 @@
-// Purpose: local-only AI-UP -> Bitrix24 test gateway with hard test-mode guards, duplicate checks and safe logging.
+// Purpose: AI-UP -> Bitrix24 guarded gateway with hard test-mode guards, duplicate checks and safe logging.
 
 import {
   appendAiupGatewayJournalRecord,
@@ -8,14 +8,20 @@ import {
 } from "./aiup-bitrix-gateway-store.ts"
 
 export const AIUP_GATEWAY_ENDPOINT_PATH = "/api/aiup/bitrix-test"
-export const AIUP_GATEWAY_MODE_REQUIRED = "test"
-export const AIUP_GATEWAY_FIRST_REAL_TEST_MODE = "first_real_test"
+export const AIUP_GATEWAY_DRY_RUN_MODE = "dry_run"
+export const AIUP_GATEWAY_TEST_ONLY_MODE = "test_only"
+export const AIUP_GATEWAY_FIRST_REAL_CONTACT_MODE = "first_real_contact"
+export const AIUP_GATEWAY_LIMITED_BATCH_MODE = "limited_batch"
+export const AIUP_GATEWAY_MODE_REQUIRED = AIUP_GATEWAY_TEST_ONLY_MODE
+export const AIUP_GATEWAY_FIRST_REAL_TEST_MODE = AIUP_GATEWAY_FIRST_REAL_CONTACT_MODE
 export const AIUP_GATEWAY_MANUAL_GATE_REQUIRED = "test-only-enabled"
 export const AIUP_GATEWAY_TEST_PHONE = "+79990000000"
 export const AIUP_GATEWAY_MAX_DAILY_DEFAULT = 5
 export const AIUP_GATEWAY_ALLOWED_MODES = [
+  AIUP_GATEWAY_DRY_RUN_MODE,
   AIUP_GATEWAY_MODE_REQUIRED,
   AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+  AIUP_GATEWAY_LIMITED_BATCH_MODE,
 ] as const
 export const AIUP_GATEWAY_BLOCKED_MODES = ["live", "prod", "production"] as const
 export const AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS = [
@@ -32,7 +38,7 @@ export const AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS = [
   "ростов-на-дону, ростовская область",
 ] as const
 
-export const AIUP_GATEWAY_BITRIX_CATEGORY_NAME = "AI-UP / Test"
+export const AIUP_GATEWAY_BITRIX_CATEGORY_NAME = "Продажи"
 export const AIUP_GATEWAY_BITRIX_STAGE_NAME = "Новый AI-UP контакт"
 export const AIUP_GATEWAY_BITRIX_SOURCE_NAME = "AI-UP"
 
@@ -55,6 +61,7 @@ export const AIUP_GATEWAY_ALLOWED_FIELDS = [
   "mode",
   "approval_token",
   "batch_id",
+  "imported_at",
   "name",
   "phone",
   "source_type",
@@ -70,7 +77,6 @@ export const AIUP_GATEWAY_REQUIRED_FIELDS = [
   "mode",
   "approval_token",
   "batch_id",
-  "name",
   "phone",
   "source_type",
   "source_name",
@@ -87,6 +93,7 @@ type AiupGatewayNormalizedPayload = {
   approval_token: string
   batch_id: string
   channel: string
+  imported_at: string
   manager_comment: string
   mode: string
   name: string
@@ -107,17 +114,23 @@ type BitrixFieldLabel = (typeof AIUP_GATEWAY_FIELD_LABELS)[keyof typeof AIUP_GAT
 type BitrixGatewayMapping = {
   categoryId: string
   categoryName: string
-  fieldCodes: Record<BitrixFieldLabel, string>
+  fieldCodes: Partial<Record<BitrixFieldLabel, string>>
+  missingFieldLabels: BitrixFieldLabel[]
   sourceId: string
   sourceName: string
   startStageId: string
   startStageName: string
+  usedStageFallback: boolean
 }
 
 type GatewayEnv = {
   approvalToken: string
+  bitrixCategoryName: string
+  bitrixStageName: string
   bitrixWebhookUrl: string
   dailyLimit: number
+  firstRealApprovalToken: string
+  limitedBatchEnabled: boolean
   manualGate: string
   mode: (typeof AIUP_GATEWAY_ALLOWED_MODES)[number]
   nativeWebhookEnabled: boolean
@@ -140,7 +153,10 @@ type GatewayResultBody = {
   bitrix: {
     category_id: string
     category_name: string
+    contact_action?: "created" | "existing"
+    contact_id?: string
     created_deal_id?: string
+    created_contact_id?: string
     source_id: string
     source_name: string
     stage_id: string
@@ -149,6 +165,7 @@ type GatewayResultBody = {
   check_summary: {
     daily_limit_remaining: number
     duplicate_result: "bitrix" | "local_journal" | "none"
+    existing_lead_ids?: string[]
     ignored_fields: string[]
     journal_store_path: string
   }
@@ -228,6 +245,20 @@ function cleanString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function canonicalizeGatewayMode(value: unknown) {
+  const normalized = lowerSafe(value)
+
+  if (normalized === "test") {
+    return AIUP_GATEWAY_TEST_ONLY_MODE
+  }
+
+  if (normalized === "first_real_test") {
+    return AIUP_GATEWAY_FIRST_REAL_CONTACT_MODE
+  }
+
+  return normalized
+}
+
 function normalizePhone(value: string) {
   return cleanString(value).replace(/[^\d+]/g, "")
 }
@@ -280,6 +311,10 @@ function resolveNativeWebhookEnabled(envValue: unknown) {
   return cleanString(envValue).toLowerCase() === "enabled"
 }
 
+function resolveLimitedBatchEnabled(envValue: unknown) {
+  return cleanString(envValue).toLowerCase() === "enabled"
+}
+
 function pickAllowedFields(input: AiupGatewayInput) {
   const picked = {} as Record<AllowedFieldName, string>
   const ignored: string[] = []
@@ -312,9 +347,10 @@ function toNormalizedPayload(payload: Record<AllowedFieldName, string>): AiupGat
     approval_token: cleanString(payload.approval_token),
     batch_id: cleanString(payload.batch_id),
     channel: cleanString(payload.channel),
+    imported_at: cleanString(payload.imported_at),
     manager_comment: cleanString(payload.manager_comment),
-    mode: cleanString(payload.mode),
-    name: cleanString(payload.name),
+    mode: canonicalizeGatewayMode(payload.mode),
+    name: cleanString(payload.name) || "AI-UP контакт",
     phone: normalizePhone(payload.phone),
     region: cleanString(payload.region),
     source_name: cleanString(payload.source_name),
@@ -328,6 +364,7 @@ function sanitizePayload(payload: AiupGatewayNormalizedPayload): AiupGatewaySani
   return {
     batch_id: payload.batch_id,
     channel: payload.channel,
+    imported_at: payload.imported_at,
     manager_comment: payload.manager_comment,
     mode: payload.mode,
     name: payload.name,
@@ -346,6 +383,7 @@ function buildDuplicateKey(payload: AiupGatewayNormalizedPayload) {
     lowerSafe(payload.source_type),
     lowerSafe(payload.source_name),
     lowerSafe(payload.batch_id),
+    lowerSafe(payload.imported_at),
   ].join("::")
 }
 
@@ -378,20 +416,35 @@ function parsePositiveInteger(value: string) {
 
 function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
   const env = deps.env || {}
-  const mode = lowerSafe(env.mode ?? process.env.AIUP_GATEWAY_MODE)
+  const mode = canonicalizeGatewayMode(env.mode ?? process.env.AIUP_GATEWAY_MODE)
   const manualGate = cleanString(env.manualGate ?? process.env.AIUP_GATEWAY_MANUAL_GATE)
   const approvalToken = cleanString(env.approvalToken ?? process.env.AIUP_GATEWAY_APPROVAL_TOKEN)
-  const bitrixWebhookUrl = cleanString(
-    env.bitrixWebhookUrl ?? deps.bitrixWebhookUrl ?? process.env.BITRIX24_TEST_CRM_WEBHOOK_URL,
+  const firstRealApprovalToken = cleanString(
+    env.firstRealApprovalToken ??
+      process.env.AIUP_GATEWAY_FIRST_REAL_CONTACT_APPROVAL_TOKEN ??
+      process.env.AIUP_GATEWAY_FIRST_REAL_TEST_APPROVAL_TOKEN,
   )
+  const bitrixWebhookUrl = cleanString(
+    env.bitrixWebhookUrl ??
+      deps.bitrixWebhookUrl ??
+      process.env.BITRIX24_AIUP_CRM_WEBHOOK_URL ??
+      process.env.BITRIX24_TEST_CRM_WEBHOOK_URL,
+  )
+  const bitrixCategoryName = cleanString(process.env.AIUP_GATEWAY_BITRIX_CATEGORY_NAME) || AIUP_GATEWAY_BITRIX_CATEGORY_NAME
+  const bitrixStageName = cleanString(process.env.AIUP_GATEWAY_BITRIX_STAGE_NAME) || AIUP_GATEWAY_BITRIX_STAGE_NAME
   const dailyLimitRaw = cleanString(
     String(env.dailyLimit ?? process.env.AIUP_GATEWAY_DAILY_LIMIT ?? AIUP_GATEWAY_MAX_DAILY_DEFAULT),
   )
-  const nativeWebhookEnabled = resolveNativeWebhookEnabled(process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED)
+  const nativeWebhookEnabled = resolveNativeWebhookEnabled(
+    env.nativeWebhookEnabled ?? process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED,
+  )
+  const limitedBatchEnabled = resolveLimitedBatchEnabled(
+    env.limitedBatchEnabled ?? process.env.AIUP_GATEWAY_LIMITED_BATCH_ENABLED,
+  )
   const dailyLimit = parsePositiveInteger(dailyLimitRaw)
 
   if (!AIUP_GATEWAY_ALLOWED_MODES.includes(mode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number])) {
-    throw new Error("AIUP_GATEWAY_MODE must be test or first_real_test")
+    throw new Error("AIUP_GATEWAY_MODE must be dry_run, test_only, first_real_contact or limited_batch")
   }
 
   if (manualGate !== AIUP_GATEWAY_MANUAL_GATE_REQUIRED) {
@@ -403,7 +456,7 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
   }
 
   if (!bitrixWebhookUrl) {
-    throw new Error("BITRIX24_TEST_CRM_WEBHOOK_URL is not configured")
+    throw new Error("BITRIX24_AIUP_CRM_WEBHOOK_URL or BITRIX24_TEST_CRM_WEBHOOK_URL is not configured")
   }
 
   if (!dailyLimit) {
@@ -412,8 +465,12 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
 
   return {
     approvalToken,
+    bitrixCategoryName,
+    bitrixStageName,
     bitrixWebhookUrl,
     dailyLimit,
+    firstRealApprovalToken,
+    limitedBatchEnabled,
     manualGate,
     mode: mode as (typeof AIUP_GATEWAY_ALLOWED_MODES)[number],
     nativeWebhookEnabled,
@@ -435,9 +492,10 @@ function normalizeAiupNativeContact(
   const channel = cleanString(contact["Канал"]) || "AI-UP"
 
   return {
-    approval_token: env.approvalToken,
+    approval_token: env.firstRealApprovalToken || env.approvalToken,
     batch_id: buildNativeWebhookBatchId(now),
     channel,
+    imported_at: date,
     manager_comment: [`AI-UP native webhook`, interactionType && `Тип: ${interactionType}`, date && `Дата: ${date}`]
       .filter(Boolean)
       .join("; "),
@@ -586,12 +644,16 @@ export async function processAiupNativeWebhookRequest(
 }
 
 function validatePayloadForMode(payload: AiupGatewayNormalizedPayload, mode: GatewayEnv["mode"]) {
-  if (mode === AIUP_GATEWAY_MODE_REQUIRED) {
+  if (mode === AIUP_GATEWAY_DRY_RUN_MODE || mode === AIUP_GATEWAY_TEST_ONLY_MODE) {
     if (payload.phone !== AIUP_GATEWAY_TEST_PHONE) {
       return "Only the dedicated test phone is allowed"
     }
 
     return null
+  }
+
+  if (mode === AIUP_GATEWAY_LIMITED_BATCH_MODE) {
+    // Same content guard as first_real_contact, but enabled separately at env level.
   }
 
   const normalizedSourceHost = normalizeSourceHost(payload.source_url_or_phone)
@@ -601,7 +663,7 @@ function validatePayloadForMode(payload: AiupGatewayNormalizedPayload, mode: Gat
       normalizedSourceHost as (typeof AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS)[number],
     )
   ) {
-    return "Only the approved first_real_test source sites are allowed"
+    return "Only the approved first_real_contact source sites are allowed"
   }
 
   const normalizedRegion = normalizeRegion(payload.region)
@@ -610,12 +672,12 @@ function validatePayloadForMode(payload: AiupGatewayNormalizedPayload, mode: Gat
       normalizedRegion as (typeof AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS)[number],
     )
   ) {
-    return "Only the approved first_real_test region is allowed"
+    return "Only the approved first_real_contact region is allowed"
   }
 
   const phoneDigits = payload.phone.replace(/\D/g, "")
   if (phoneDigits.length < 11) {
-    return "Phone must contain at least 11 digits in first_real_test mode"
+    return "Phone must contain at least 11 digits in first_real_contact mode"
   }
 
   return null
@@ -692,9 +754,23 @@ function requireSingleMatch<T>(
   return matches[0]
 }
 
+function sortBitrixRowsBySort<T extends Record<string, unknown>>(rows: T[]) {
+  return [...rows].sort((left, right) => {
+    const leftSort = Number.parseInt(cleanString(left.SORT), 10)
+    const rightSort = Number.parseInt(cleanString(right.SORT), 10)
+
+    return (Number.isFinite(leftSort) ? leftSort : 0) - (Number.isFinite(rightSort) ? rightSort : 0)
+  })
+}
+
+function resolveDealStageEntityId(categoryId: string) {
+  return categoryId === "0" ? "DEAL_STAGE" : `DEAL_STAGE_${categoryId}`
+}
+
 async function resolveBitrixMapping(
   webhookUrl: string,
   fetchImpl: typeof fetch,
+  env: GatewayEnv,
 ): Promise<BitrixGatewayMapping> {
   const categories = await callBitrixMethod<Array<Record<string, unknown>>>(
     webhookUrl,
@@ -702,11 +778,11 @@ async function resolveBitrixMapping(
     {},
     fetchImpl,
   )
-  const category = requireSingleMatch(
-    categories.filter((item) => cleanString(item.NAME) === AIUP_GATEWAY_BITRIX_CATEGORY_NAME),
-    "AI-UP / Test category",
-    (item) => cleanString(item.NAME),
-  )
+  const categoryMatches = categories.filter((item) => cleanString(item.NAME) === env.bitrixCategoryName)
+  const category =
+    categoryMatches.length === 0 && env.bitrixCategoryName === AIUP_GATEWAY_BITRIX_CATEGORY_NAME
+      ? { ID: "0", NAME: AIUP_GATEWAY_BITRIX_CATEGORY_NAME, SORT: "0" }
+      : requireSingleMatch(categoryMatches, `${env.bitrixCategoryName} category`, (item) => cleanString(item.NAME))
 
   const categoryId = cleanString(category.ID)
   const stageRows = await callBitrixMethod<Array<Record<string, unknown>>>(
@@ -714,17 +790,21 @@ async function resolveBitrixMapping(
     "crm.status.list",
     {
       filter: {
-        ENTITY_ID: `DEAL_STAGE_${categoryId}`,
+        ENTITY_ID: resolveDealStageEntityId(categoryId),
       },
     },
     fetchImpl,
   )
 
-  const startStage = requireSingleMatch(
-    stageRows.filter((item) => cleanString(item.NAME) === AIUP_GATEWAY_BITRIX_STAGE_NAME),
-    "AI-UP / Test start stage",
-    (item) => cleanString(item.NAME),
-  )
+  const preferredStageMatches = stageRows.filter((item) => cleanString(item.NAME) === env.bitrixStageName)
+  const usedStageFallback = preferredStageMatches.length === 0
+  const startStage = usedStageFallback
+    ? sortBitrixRowsBySort(stageRows)[0]
+    : requireSingleMatch(preferredStageMatches, `${env.bitrixStageName} start stage`, (item) => cleanString(item.NAME))
+
+  if (!startStage) {
+    throw new Error(`${env.bitrixCategoryName} start stage lookup returned no stages`)
+  }
 
   const sources = await callBitrixMethod<Array<Record<string, unknown>>>(
     webhookUrl,
@@ -749,7 +829,8 @@ async function resolveBitrixMapping(
     fetchImpl,
   )
 
-  const fieldCodes = {} as Record<BitrixFieldLabel, string>
+  const fieldCodes = {} as Partial<Record<BitrixFieldLabel, string>>
+  const missingFieldLabels: BitrixFieldLabel[] = []
 
   for (const fieldLabel of Object.values(AIUP_GATEWAY_FIELD_LABELS)) {
     const matches = Object.entries(dealFields)
@@ -761,6 +842,11 @@ async function resolveBitrixMapping(
       })
       .map(([fieldCode]) => fieldCode)
 
+    if (matches.length === 0) {
+      missingFieldLabels.push(fieldLabel)
+      continue
+    }
+
     fieldCodes[fieldLabel] = requireSingleMatch(matches, `${fieldLabel} custom field`, (item) => item)
   }
 
@@ -768,55 +854,189 @@ async function resolveBitrixMapping(
     categoryId,
     categoryName: cleanString(category.NAME),
     fieldCodes,
+    missingFieldLabels,
     sourceId: cleanString(source.STATUS_ID),
     sourceName: cleanString(source.NAME),
     startStageId: cleanString(startStage.STATUS_ID),
     startStageName: cleanString(startStage.NAME),
+    usedStageFallback,
   }
 }
 
-function buildBitrixDealPayload(mapping: BitrixGatewayMapping, payload: AiupGatewayNormalizedPayload, now: Date) {
-  const importedAt = now.toISOString()
-  const comments = [
-    "TEST ONLY / controlled webhook gateway",
-    `Phone: ${payload.phone}`,
+function getImportedAtValue(payload: AiupGatewayNormalizedPayload, now: Date) {
+  return payload.imported_at || now.toISOString()
+}
+
+function buildContactComment(payload: AiupGatewayNormalizedPayload, importedAt: string) {
+  return [
+    "AI-UP / controlled webhook gateway contact",
+    `Masked phone: ${maskPhone(payload.phone)}`,
     `Source type: ${payload.source_type}`,
     `Source name: ${payload.source_name}`,
+    `Channel: ${payload.channel || "-"}`,
+    `Imported at: ${importedAt}`,
+    `Batch ID: ${payload.batch_id}`,
+    `Manager comment: ${payload.manager_comment || "-"}`,
+  ].join("\n")
+}
+
+function buildBitrixDealPayload(
+  mapping: BitrixGatewayMapping,
+  payload: AiupGatewayNormalizedPayload,
+  now: Date,
+  contactId: string,
+) {
+  const importedAt = getImportedAtValue(payload, now)
+  const title = payload.name.startsWith("TEST /")
+    ? payload.name
+    : `AI-UP / ${payload.source_name || "unknown source"} / ${maskPhone(payload.phone)}`
+  const comments = [
+    "AI-UP / controlled webhook gateway",
+    `Masked phone: ${maskPhone(payload.phone)}`,
+    `Source type: ${payload.source_type}`,
+    `Source name: ${payload.source_name}`,
+    `Channel: ${payload.channel || "-"}`,
+    `Imported at: ${importedAt}`,
     `Batch ID: ${payload.batch_id}`,
     `Source URL or Phone: ${payload.source_url_or_phone || "-"}`,
     `Manager comment: ${payload.manager_comment || "-"}`,
+    mapping.missingFieldLabels.length > 0 && `Missing AI-UP custom fields: ${mapping.missingFieldLabels.join(", ")}`,
+    mapping.usedStageFallback && `Stage fallback used: ${mapping.startStageName}`,
   ].join("\n")
+  const fields: Record<string, unknown> = {
+    TITLE: title,
+    CATEGORY_ID: mapping.categoryId,
+    STAGE_ID: mapping.startStageId,
+    SOURCE_ID: mapping.sourceId,
+    CONTACT_ID: contactId,
+    COMMENTS: comments,
+  }
+
+  const assignCustomField = (label: BitrixFieldLabel, value: string) => {
+    const code = mapping.fieldCodes[label]
+    if (code) {
+      fields[code] = value
+    }
+  }
+
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.sourceType, payload.source_type)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.sourceName, payload.source_name)
+  assignCustomField(
+    AIUP_GATEWAY_FIELD_LABELS.sourceUrlOrPhone,
+    payload.source_url_or_phone || payload.source_name || maskPhone(payload.phone),
+  )
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.region, payload.region)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.importedAt, importedAt)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.status, payload.status)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.channel, payload.channel)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.managerComment, payload.manager_comment)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.callAttempts, "0")
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.contactQuality, payload.status)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.nextStep, "Ручная обработка")
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.batchId, payload.batch_id)
 
   return {
-    fields: {
-      TITLE: payload.name,
-      CATEGORY_ID: mapping.categoryId,
-      STAGE_ID: mapping.startStageId,
-      SOURCE_ID: mapping.sourceId,
-      COMMENTS: comments,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceType]]: payload.source_type,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceName]]: payload.source_name,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceUrlOrPhone]]: payload.source_url_or_phone,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.region]]: payload.region,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.importedAt]]: importedAt,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.status]]: payload.status,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.channel]]: payload.channel,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.managerComment]]: payload.manager_comment,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.callAttempts]]: "0",
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.contactQuality]]: payload.status,
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.nextStep]]: "Не обрабатывать",
-      [mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.batchId]]: payload.batch_id,
-    },
+    fields,
     params: {
       REGISTER_SONET_EVENT: "N",
     },
   }
 }
 
+async function findLeadDuplicatesByPhone(
+  webhookUrl: string,
+  payload: AiupGatewayNormalizedPayload,
+  fetchImpl: typeof fetch,
+) {
+  const result = await callBitrixMethod<Record<string, number[]>>(
+    webhookUrl,
+    "crm.duplicate.findbycomm",
+    {
+      entity_type: "LEAD",
+      type: "PHONE",
+      values: [payload.phone],
+    },
+    fetchImpl,
+  )
+
+  return (result.LEAD || []).map((item) => String(item))
+}
+
+async function findContactDuplicatesByPhone(
+  webhookUrl: string,
+  payload: AiupGatewayNormalizedPayload,
+  fetchImpl: typeof fetch,
+) {
+  const result = await callBitrixMethod<Record<string, number[]>>(
+    webhookUrl,
+    "crm.duplicate.findbycomm",
+    {
+      entity_type: "CONTACT",
+      type: "PHONE",
+      values: [payload.phone],
+    },
+    fetchImpl,
+  )
+
+  return (result.CONTACT || []).map((item) => String(item))
+}
+
+async function createBitrixContact(
+  webhookUrl: string,
+  mapping: BitrixGatewayMapping,
+  payload: AiupGatewayNormalizedPayload,
+  now: Date,
+  fetchImpl: typeof fetch,
+) {
+  const importedAt = getImportedAtValue(payload, now)
+  const name = cleanString(payload.name) || "AI-UP контакт"
+  const lastName = cleanString(payload.source_name) || "Pegas"
+
+  const result = await callBitrixMethod<number>(
+    webhookUrl,
+    "crm.contact.add",
+    {
+      fields: {
+        NAME: name,
+        LAST_NAME: lastName,
+        SOURCE_ID: mapping.sourceId,
+        COMMENTS: buildContactComment(payload, importedAt),
+        PHONE: [
+          {
+            VALUE: payload.phone,
+            VALUE_TYPE: "WORK",
+          },
+        ],
+      },
+      params: {
+        REGISTER_SONET_EVENT: "N",
+      },
+    },
+    fetchImpl,
+  )
+
+  return String(result)
+}
+
+async function getBitrixContact(
+  webhookUrl: string,
+  contactId: string,
+  fetchImpl: typeof fetch,
+) {
+  return callBitrixMethod<Record<string, unknown>>(
+    webhookUrl,
+    "crm.contact.get",
+    { id: contactId },
+    fetchImpl,
+  )
+}
+
 async function findBitrixDuplicateDeal(
   webhookUrl: string,
   mapping: BitrixGatewayMapping,
   payload: AiupGatewayNormalizedPayload,
+  contactId: string | null,
+  now: Date,
   fetchImpl: typeof fetch,
 ) {
   const deals = await callBitrixMethod<BitrixDealRecord[]>(
@@ -833,10 +1053,13 @@ async function findBitrixDuplicateDeal(
         "CATEGORY_ID",
         "STAGE_ID",
         "SOURCE_ID",
+        "CONTACT_ID",
         mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceType],
         mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceName],
+        mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceUrlOrPhone],
+        mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.importedAt],
         mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.batchId],
-      ],
+      ].filter(Boolean),
     },
     fetchImpl,
   )
@@ -845,15 +1068,34 @@ async function findBitrixDuplicateDeal(
 
   return (
     deals.find((deal) => {
-      const batchMatch =
-        cleanString(deal[mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.batchId]]) === payload.batch_id
-      const sourceTypeMatch =
-        cleanString(deal[mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceType]]) === payload.source_type
-      const sourceNameMatch =
-        cleanString(deal[mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceName]]) === payload.source_name
-      const commentMatch = cleanString(deal.COMMENTS).includes(normalizedPhone)
+      const comments = cleanString(deal.COMMENTS)
+      const contactMatch = contactId ? cleanString(deal.CONTACT_ID) === contactId : false
+      const batchCode = mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.batchId]
+      const sourceTypeCode = mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceType]
+      const sourceNameCode = mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceName]
+      const importedAtCode = mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.importedAt]
+      const sourceUrlOrPhoneCode = mapping.fieldCodes[AIUP_GATEWAY_FIELD_LABELS.sourceUrlOrPhone]
+      const batchMatch = batchCode ? cleanString(deal[batchCode]) === payload.batch_id : comments.includes(payload.batch_id)
+      const sourceTypeMatch = sourceTypeCode
+        ? cleanString(deal[sourceTypeCode]) === payload.source_type
+        : comments.includes(payload.source_type)
+      const sourceNameMatch = sourceNameCode
+        ? cleanString(deal[sourceNameCode]) === payload.source_name
+        : comments.includes(payload.source_name)
+      const importedAt = getImportedAtValue(payload, now)
+      const importedAtMatch = importedAtCode
+        ? cleanString(deal[importedAtCode]) === importedAt
+        : comments.includes(importedAt)
+      const phoneFieldMatch = sourceUrlOrPhoneCode
+        ? normalizePhone(cleanString(deal[sourceUrlOrPhoneCode])) === normalizedPhone
+        : false
+      const commentMatch = comments.includes(normalizedPhone) || comments.includes(maskPhone(payload.phone))
 
-      return batchMatch && sourceTypeMatch && sourceNameMatch && commentMatch
+      return (
+        (batchMatch && contactMatch) ||
+        (batchMatch && sourceTypeMatch && sourceNameMatch && (commentMatch || phoneFieldMatch)) ||
+        (contactMatch && sourceNameMatch && importedAtMatch)
+      )
     }) || null
   )
 }
@@ -897,7 +1139,7 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    const requestedMode = lowerSafe(normalized.mode)
+    const requestedMode = canonicalizeGatewayMode(normalized.mode)
     if (AIUP_GATEWAY_BLOCKED_MODES.includes(requestedMode as (typeof AIUP_GATEWAY_BLOCKED_MODES)[number])) {
       return {
         ok: false,
@@ -918,7 +1160,7 @@ export async function processAiupBitrixGatewayRequest(
         ok: false,
         status: 403,
         body: {
-          error: "Only mode=test or mode=first_real_test is allowed.",
+          error: "Only mode=dry_run, mode=test_only, mode=first_real_contact or mode=limited_batch is allowed.",
           ignored_fields: picked.ignored,
           log_entry: logEntry,
           ok: false,
@@ -928,7 +1170,12 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    if (requestedMode !== env.mode) {
+    const effectiveMode =
+      requestedMode === AIUP_GATEWAY_DRY_RUN_MODE
+        ? env.mode
+        : (requestedMode as Exclude<(typeof AIUP_GATEWAY_ALLOWED_MODES)[number], typeof AIUP_GATEWAY_DRY_RUN_MODE>)
+
+    if (requestedMode !== AIUP_GATEWAY_DRY_RUN_MODE && effectiveMode !== env.mode) {
       return {
         ok: false,
         status: 403,
@@ -943,7 +1190,27 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    if (normalized.approval_token !== env.approvalToken) {
+    if (effectiveMode === AIUP_GATEWAY_LIMITED_BATCH_MODE && !env.limitedBatchEnabled) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "limited_batch mode is configured as disabled",
+          ignored_fields: picked.ignored,
+          log_entry: logEntry,
+          ok: false,
+          request_id: requestId,
+          sanitized_payload: sanitized,
+        },
+      }
+    }
+
+    const expectedApprovalToken =
+      effectiveMode === AIUP_GATEWAY_FIRST_REAL_CONTACT_MODE && env.firstRealApprovalToken
+        ? env.firstRealApprovalToken
+        : env.approvalToken
+
+    if (normalized.approval_token !== expectedApprovalToken) {
       return {
         ok: false,
         status: 403,
@@ -958,7 +1225,7 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    const modeValidationError = validatePayloadForMode(normalized, env.mode)
+    const modeValidationError = validatePayloadForMode(normalized, effectiveMode)
     if (modeValidationError) {
       return {
         ok: false,
@@ -980,6 +1247,7 @@ export async function processAiupBitrixGatewayRequest(
     const createdToday = journal.records.filter(
       (record) => record.dayKey === dayKey && record.status === "created",
     ).length
+    const isDryRunRequest = !options.performWrite || requestedMode === AIUP_GATEWAY_DRY_RUN_MODE
 
     if (createdToday >= env.dailyLimit) {
       return {
@@ -996,10 +1264,61 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    if (!options.performWrite) {
+    const mapping = await resolveBitrixMapping(env.bitrixWebhookUrl, fetchImpl, env)
+    const leadDuplicateIds = await findLeadDuplicatesByPhone(env.bitrixWebhookUrl, normalized, fetchImpl)
+    if (leadDuplicateIds.length > 0) {
+      return {
+        ok: false,
+        status: 409,
+        body: {
+          error: "duplicate_detected: existing lead already uses this phone",
+          ignored_fields: picked.ignored,
+          log_entry: logEntry,
+          ok: false,
+          request_id: requestId,
+          sanitized_payload: sanitized,
+        },
+      }
+    }
+
+    const localDuplicate = journal.records.find(
+      (record) =>
+        record.duplicateKey === duplicateKey && (record.status === "created" || record.status === "duplicate"),
+    )
+    const contactDuplicateIds = await findContactDuplicatesByPhone(env.bitrixWebhookUrl, normalized, fetchImpl)
+    if (contactDuplicateIds.length > 1) {
+      return {
+        ok: false,
+        status: 409,
+        body: {
+          error: "duplicate_detected: multiple contacts already use this phone",
+          ignored_fields: picked.ignored,
+          log_entry: logEntry,
+          ok: false,
+          request_id: requestId,
+          sanitized_payload: sanitized,
+        },
+      }
+    }
+
+    const existingContactId = contactDuplicateIds[0] || null
+    const bitrixDuplicate = await findBitrixDuplicateDeal(
+      env.bitrixWebhookUrl,
+      mapping,
+      normalized,
+      existingContactId,
+      now,
+      fetchImpl,
+    )
+
+    const duplicateResult = localDuplicate ? "local_journal" : bitrixDuplicate ? "bitrix" : "none"
+    const duplicateDealId = localDuplicate?.bitrixDealId || cleanString(bitrixDuplicate?.ID) || undefined
+    const dryRunContactAction = existingContactId ? "existing" : "created"
+
+    if (isDryRunRequest) {
       logEntry = buildGatewayLogEntry({
         bitrixResult: "not_sent",
-        duplicateResult: "none",
+        duplicateResult,
         now,
         payload: normalized,
         requestId,
@@ -1011,37 +1330,35 @@ export async function processAiupBitrixGatewayRequest(
         status: 200,
         body: {
           bitrix: {
-            category_id: "",
-            category_name: AIUP_GATEWAY_BITRIX_CATEGORY_NAME,
-            source_id: "",
-            source_name: AIUP_GATEWAY_BITRIX_SOURCE_NAME,
-            stage_id: "",
-            stage_name: AIUP_GATEWAY_BITRIX_STAGE_NAME,
+            category_id: mapping.categoryId,
+            category_name: mapping.categoryName,
+            contact_action: dryRunContactAction,
+            contact_id: existingContactId || undefined,
+            created_contact_id: undefined,
+            created_deal_id: duplicateDealId,
+            source_id: mapping.sourceId,
+            source_name: mapping.sourceName,
+            stage_id: mapping.startStageId,
+            stage_name: mapping.startStageName,
           },
           check_summary: {
             daily_limit_remaining: Math.max(env.dailyLimit - createdToday, 0),
-            duplicate_result: "none",
+            duplicate_result: duplicateResult,
+            existing_lead_ids: leadDuplicateIds,
             ignored_fields: picked.ignored,
             journal_store_path: getAiupGatewayStorePath(),
           },
           log_entry: logEntry,
           mapping: {
-            field_codes: {},
+            field_codes: mapping.fieldCodes,
           },
           ok: true,
           request_id: requestId,
-          result: "dry_run",
+          result: localDuplicate || bitrixDuplicate ? "duplicate" : "dry_run",
           sanitized_payload: sanitized,
         },
       }
     }
-
-    const mapping = await resolveBitrixMapping(env.bitrixWebhookUrl, fetchImpl)
-
-    const localDuplicate = journal.records.find(
-      (record) =>
-        record.duplicateKey === duplicateKey && (record.status === "created" || record.status === "duplicate"),
-    )
 
     if (localDuplicate) {
       logEntry = buildGatewayLogEntry({
@@ -1060,6 +1377,8 @@ export async function processAiupBitrixGatewayRequest(
           bitrix: {
             category_id: mapping.categoryId,
             category_name: mapping.categoryName,
+            contact_action: existingContactId ? "existing" : undefined,
+            contact_id: existingContactId || localDuplicate.bitrixContactId || undefined,
             created_deal_id: localDuplicate.bitrixDealId || undefined,
             source_id: mapping.sourceId,
             source_name: mapping.sourceName,
@@ -1069,6 +1388,7 @@ export async function processAiupBitrixGatewayRequest(
           check_summary: {
             daily_limit_remaining: Math.max(env.dailyLimit - createdToday, 0),
             duplicate_result: "local_journal",
+            existing_lead_ids: leadDuplicateIds,
             ignored_fields: picked.ignored,
             journal_store_path: getAiupGatewayStorePath(),
           },
@@ -1084,13 +1404,6 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    const bitrixDuplicate = await findBitrixDuplicateDeal(
-      env.bitrixWebhookUrl,
-      mapping,
-      normalized,
-      fetchImpl,
-    )
-
     if (bitrixDuplicate) {
       logEntry = buildGatewayLogEntry({
         bitrixResult: "duplicate",
@@ -1103,6 +1416,7 @@ export async function processAiupBitrixGatewayRequest(
 
       await appendJournalRecord({
         batchId: normalized.batch_id,
+        bitrixContactId: existingContactId,
         bitrixDealId: cleanString(bitrixDuplicate.ID) || null,
         createdAt: now.toISOString(),
         dayKey,
@@ -1121,6 +1435,8 @@ export async function processAiupBitrixGatewayRequest(
           bitrix: {
             category_id: mapping.categoryId,
             category_name: mapping.categoryName,
+            contact_action: existingContactId ? "existing" : undefined,
+            contact_id: existingContactId || undefined,
             created_deal_id: cleanString(bitrixDuplicate.ID) || undefined,
             source_id: mapping.sourceId,
             source_name: mapping.sourceName,
@@ -1130,6 +1446,7 @@ export async function processAiupBitrixGatewayRequest(
           check_summary: {
             daily_limit_remaining: Math.max(env.dailyLimit - createdToday, 0),
             duplicate_result: "bitrix",
+            existing_lead_ids: leadDuplicateIds,
             ignored_fields: picked.ignored,
             journal_store_path: getAiupGatewayStorePath(),
           },
@@ -1145,7 +1462,10 @@ export async function processAiupBitrixGatewayRequest(
       }
     }
 
-    const payloadForBitrix = buildBitrixDealPayload(mapping, normalized, now)
+    const contactId =
+      existingContactId || (await createBitrixContact(env.bitrixWebhookUrl, mapping, normalized, now, fetchImpl))
+    const contactAction: "created" | "existing" = existingContactId ? "existing" : "created"
+    const payloadForBitrix = buildBitrixDealPayload(mapping, normalized, now, contactId)
     const resultType = "created"
 
     logEntry = buildGatewayLogEntry({
@@ -1166,6 +1486,7 @@ export async function processAiupBitrixGatewayRequest(
 
     await appendJournalRecord({
       batchId: normalized.batch_id,
+      bitrixContactId: contactId,
       bitrixDealId: String(createdDealId),
       createdAt: now.toISOString(),
       dayKey,
@@ -1184,7 +1505,10 @@ export async function processAiupBitrixGatewayRequest(
         bitrix: {
           category_id: mapping.categoryId,
           category_name: mapping.categoryName,
+          contact_action: contactAction,
+          contact_id: contactId,
           created_deal_id: String(createdDealId),
+          created_contact_id: contactAction === "created" ? contactId : undefined,
           source_id: mapping.sourceId,
           source_name: mapping.sourceName,
           stage_id: mapping.startStageId,
@@ -1193,6 +1517,7 @@ export async function processAiupBitrixGatewayRequest(
         check_summary: {
           daily_limit_remaining: Math.max(env.dailyLimit - createdToday - 1, 0),
           duplicate_result: "none",
+          existing_lead_ids: leadDuplicateIds,
           ignored_fields: picked.ignored,
           journal_store_path: getAiupGatewayStorePath(),
         },
@@ -1248,6 +1573,7 @@ export async function verifyAiupGatewayBitrixDeal(args: {
 
   return {
     activities_count: activities.length,
+    contact_id: cleanString(deal.CONTACT_ID),
     category_id: cleanString(deal.CATEGORY_ID),
     id: cleanString(deal.ID),
     source_id: cleanString(deal.SOURCE_ID),
@@ -1264,9 +1590,10 @@ export function buildAiupGatewayTestPayload(
     approval_token: approvalToken,
     batch_id: "aiup-gateway-test-2026-06-08-001",
     channel: "gateway_test",
+    imported_at: "2026-06-11T10:00:00+03:00",
     manager_comment:
       "Тестовая запись через controlled webhook gateway. Не звонить. Не писать. Не ставить задачи. Не обрабатывать как клиента.",
-    mode: "test",
+    mode: AIUP_GATEWAY_TEST_ONLY_MODE,
     name: "TEST / AI-UP / gateway / не обрабатывать",
     phone: AIUP_GATEWAY_TEST_PHONE,
     region: "Ростов-на-Дону / Ростовская область",

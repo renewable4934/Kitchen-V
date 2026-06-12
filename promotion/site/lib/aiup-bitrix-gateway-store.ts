@@ -19,6 +19,7 @@ export type AiupGatewayJournalRecord = {
   dayKey: string
   status: AiupGatewayJournalStatus
   bitrixDealId?: string | null
+  bitrixContactId?: string | null
   phoneMasked: string
   sourceName: string
   sourceType: string
