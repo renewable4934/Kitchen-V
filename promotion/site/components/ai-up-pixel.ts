@@ -4,16 +4,14 @@
 
 import { useEffect } from "react"
 
+import {
+  COOKIE_CONSENT_UPDATED_EVENT,
+  MARKETING_CONSENT_GRANTED_EVENT,
+} from "../lib/cookie-consent.ts"
+
 const aiUpPixelScriptId = "ai-up-pixel-script"
-const marketingConsentEvent = "marketing-consent-granted"
 const pixelEnabled = process.env.NEXT_PUBLIC_AIUP_PIXEL_ENABLED === "true"
 const pixelId = process.env.NEXT_PUBLIC_AIUP_PIXEL_ID?.trim() || ""
-
-declare global {
-  interface Window {
-    __marketingConsent?: boolean
-  }
-}
 
 export function buildAiUpPixelSrc(id: string) {
   const normalizedId = id.trim()
@@ -42,12 +40,17 @@ export function shouldLoadAiUpPixel({
 
 export function AiUpPixel() {
   useEffect(() => {
-    const loadPixel = () => {
+    const syncPixel = () => {
+      if (window.__marketingConsent !== true) {
+        document.getElementById(aiUpPixelScriptId)?.remove()
+        return
+      }
+
       if (
         !shouldLoadAiUpPixel({
           enabled: pixelEnabled,
           id: pixelId,
-          hasConsent: window.__marketingConsent === true,
+          hasConsent: true,
           scriptPresent: Boolean(document.getElementById(aiUpPixelScriptId)),
         })
       ) {
@@ -67,10 +70,14 @@ export function AiUpPixel() {
       document.head.appendChild(script)
     }
 
-    loadPixel()
-    window.addEventListener(marketingConsentEvent, loadPixel)
+    syncPixel()
+    window.addEventListener(COOKIE_CONSENT_UPDATED_EVENT, syncPixel)
+    window.addEventListener(MARKETING_CONSENT_GRANTED_EVENT, syncPixel)
 
-    return () => window.removeEventListener(marketingConsentEvent, loadPixel)
+    return () => {
+      window.removeEventListener(COOKIE_CONSENT_UPDATED_EVENT, syncPixel)
+      window.removeEventListener(MARKETING_CONSENT_GRANTED_EVENT, syncPixel)
+    }
   }, [])
 
   return null

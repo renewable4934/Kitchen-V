@@ -46,6 +46,7 @@
 40. Local-only проверка gateway завершена успешно: `dry_run` подтвердил mapping на воронку `AI-UP / Test`, а один test-only write создал сделку `ID 21` в `CATEGORY_ID = 1`, `STAGE_ID = C1:NEW` с `activities_count = 0`.
 41. Выполнен safety freeze local-only gateway: повторный secret scan и diff review не нашли секретов в коммитируемом наборе, `typecheck` и `test:aiup-gateway` зелёные, fallback на `Продажи` не найден, второй Bitrix write не выполнялся.
 42. Gateway расширен безопасным режимом `first_real_test` и выпущен на текущую инфраструктуру только для dry-run, но реальный AI-UP запуск остановлен: в проекте уже обнаружены `48` источников, `7` активных источников, телефонные источники и дневной лимит `56`, что нарушает согласованный контур `5 сайтов / без телефонов / 15 контактов`.
+43. Marketing-consent интерфейс подготовлен в коде сайта: есть явные accept/reject/custom сценарии, сохранение выбора, повторное открытие из футера и строгая связь AI-UP с категорией marketing; production pixel остаётся выключенным.
 
 ## Core files
 Зачем сущность: базовые документы-навигаторы, которые поддерживают понятность проекта.
@@ -841,6 +842,15 @@
 - **Last updated:** 2026-06-09
 - **Lifecycle:** Active
 - **Next step:** Вернуть AI-UP проект к согласованному контуру `5 сайтов / без телефонов / лимит 15`, подключить только controlled gateway и только потом отдельно подтверждать реальный запуск.
+
+### Entry
+- **Path:** `crm/architecture/ai-up-marketing-consent-interface-2026-06-20.md`
+- **Purpose (RU):** Отчёт о реализации баннера и настроек cookies, хранении выбора, связи marketing consent с AI-UP pixel и browser QA.
+- **Trigger:** Production preflight выявил отсутствие полноценного интерфейса marketing consent как главный блокер.
+- **Owner:** Вы / владелец сайта / CRM-ответственный.
+- **Last updated:** 2026-06-20
+- **Lifecycle:** Active
+- **Next step:** Выпустить consent interface отдельно, оставив AI-UP feature flag выключенным; activation pixel проводить только отдельным этапом.
 
 ### Entry
 - **Path:** `crm/access/`

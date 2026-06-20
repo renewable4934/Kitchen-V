@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { Cormorant_Garamond } from "next/font/google"
 
+import { CookieSettingsButton } from "@/components/cookie-consent"
 import { trackCTA, trackPhoneClick } from "@/lib/tracking"
 import type { NavLink } from "@/lib/site-content"
 
@@ -142,9 +143,12 @@ export function Footer({
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-xs text-muted-foreground">{`© ${new Date().getFullYear()} ${copyrightOwner}. Все права защищены.`}</p>
-          <a href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
-            {privacyLabel}
-          </a>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-end">
+            <a href="/privacy" className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+              {privacyLabel}
+            </a>
+            <CookieSettingsButton />
+          </div>
         </div>
       </div>
     </footer>

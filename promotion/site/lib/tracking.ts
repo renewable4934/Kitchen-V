@@ -82,8 +82,8 @@ function hasAnalyticsConsent() {
     return false
   }
 
-  // TODO: wire this to the site's cookie banner once consent UX is added.
-  // Until then analytics works as before, but this flag gives a single gating point.
+  // The consent interface sets this flag before client-side tracking effects run.
+  // Existing analytics loaders remain unchanged until a separate migration is approved.
   return window.__analyticsConsent ?? true
 }
 

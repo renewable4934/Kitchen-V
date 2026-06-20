@@ -11,6 +11,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "check:cms-drift": "node ops/check-cms-drift.mjs",
+    "test:consent": "node --test --experimental-strip-types --experimental-specifier-resolution=node lib/cookie-consent.test.ts",
     "test:aiup-gateway": "node --test --experimental-strip-types --experimental-specifier-resolution=node lib/aiup-bitrix-gateway.test.ts"
   },
   "dependencies": {

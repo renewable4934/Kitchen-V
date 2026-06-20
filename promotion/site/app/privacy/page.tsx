@@ -46,7 +46,24 @@ export default async function PrivacyPage() {
           </section>
 
           <section className="rounded-xl border border-border bg-background p-6">
-            <h2 className="font-serif text-2xl font-bold text-foreground">4. Контакты для запроса</h2>
+            <h2 className="font-serif text-2xl font-bold text-foreground">4. Cookies и внешние технологии</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Необходимые cookies используются для работы сайта. Аналитические и маркетинговые категории посетитель
+              выбирает отдельно в настройках cookies. AI-UP pixel может загружаться только после согласия на
+              маркетинговую категорию и отдельного технического включения владельцем сайта.
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-border bg-background p-6">
+            <h2 className="font-serif text-2xl font-bold text-foreground">5. Изменение выбора</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Выбор хранится локально в браузере. Его можно изменить через ссылку «Настройки cookies» в нижней части
+              сайта.
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-border bg-background p-6">
+            <h2 className="font-serif text-2xl font-bold text-foreground">6. Контакты для запроса</h2>
             <div className="mt-2 flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
               <p>{content.site.footerCopyrightOwner}</p>
               <a
