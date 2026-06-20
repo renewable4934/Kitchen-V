@@ -108,3 +108,58 @@ Consent blocker устранён в коде, но production activation ост�
 5. Подготовить production env.
 6. Получить отдельное подтверждение владельца.
 7. Только затем выполнить штатный GitHub Actions deploy.
+
+## Visual browser audit retry — 2026-06-20
+
+### Статус
+
+**`BLOCKED`: визуальная browser-проверка не завершена.**
+
+Встроенный браузерный контур не подключился к локальной странице: ошибка возникла до открытия localhost и до выполнения каких-либо действий на сайте. Production-сайт, AI-UP, Bitrix24, Метрика, Директ, env и лимиты не изменялись.
+
+### Что повторно проверено без browser automation
+
+| Проверка | Результат |
+|---|---|
+| TypeScript typecheck | PASS |
+| Consent unit tests | PASS, 7/7 |
+| Production build с `AIUP_PIXEL_ENABLED=false` | PASS |
+| Production build с искусственным test ID | PASS |
+| Реальные AI-UP ID, token или snippet | Не использовались |
+| Production deploy | Не выполнялся |
+
+### Что нельзя считать проверенным
+
+- desktop viewport и отсутствие критического перекрытия CTA, телефона, формы и навигации;
+- mobile viewport, горизонтальный scroll и доступность всех кнопок;
+- фактический внешний вид баннера и modal;
+- accept/reject/custom через реальные клики;
+- повторное открытие настроек из футера;
+- сохранение localStorage после browser reload;
+- console errors в реальном браузере;
+- network requests AI-UP до и после test marketing consent;
+- единственность script после route changes в реальном DOM.
+
+### Решение по deploy consent interface
+
+**Пока нет.** Код, typecheck, тесты и обе сборки проходят, но обязательный визуальный gate не закрыт. Разрешение на deploy только consent interface можно рассматривать после повторной проверки в исправно подключённом браузере.
+
+### Можно ли включать production AI-UP pixel сейчас
+
+**Нет.**
+
+Причины:
+
+1. визуальная browser-проверка не завершена;
+2. production env для AI-UP не должен задаваться в рамках этого шага;
+3. feature flag должен оставаться `false`;
+4. требуется отдельный read-only аудит AI-UP sources и отдельное явное подтверждение владельца.
+
+### Deployment checklist после успешной browser-проверки
+
+1. Развернуть только consent interface штатным GitHub Actions процессом.
+2. Оставить AI-UP feature flag равным `false`.
+3. Не задавать production AI-UP ID или другие AI-UP env.
+4. Проверить live consent interface на desktop и mobile.
+5. Проверить accept, reject, custom и повторное открытие из футера.
+6. Оставить AI-UP activation отдельным будущим этапом.
