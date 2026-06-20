@@ -35,6 +35,8 @@ Production workflow для этого кандидата:
 
 Значения секретов и существующих env в отчёт и логи не выводились.
 
+Текущее содержимое server env независимо не прочитано из-за того же SSH blocker. Подтверждено, что новая попытка не передала AI-UP ID и не активировала новый runtime env.
+
 ## Проверки до deploy
 
 | Проверка | Результат |
@@ -42,7 +44,8 @@ Production workflow для этого кандидата:
 | Нужные consent/pixel commits присутствуют в истории кандидата | PASS |
 | Кандидат собран от актуального `origin/main` | PASS |
 | Production AI-UP feature flag | PASS, жёстко `false` |
-| Production AI-UP ID в workflow/runtime env | PASS, отсутствует |
+| Production AI-UP ID в deploy candidate | PASS, отсутствует |
+| Текущий server env | Не проверен напрямую: нет SSH-аутентификации |
 | `npm ci` | PASS |
 | TypeScript typecheck | PASS |
 | Consent tests | PASS, 7/7 |
