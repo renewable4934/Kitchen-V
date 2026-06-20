@@ -75,17 +75,16 @@ AI-UP script отсутствует в DOM, пока `marketing !== true`. По�
 | Повторное consent update | PASS, второй script запрещён |
 | Server HTML до browser consent | PASS, AI-UP URL отсутствует |
 | Privacy page | PASS, доступна локально |
-| Интерактивная визуальная browser-проверка | Не выполнена: локальное управление вкладкой было недоступно |
+| Интерактивная визуальная browser-проверка | PASS через fallback Playwright/Chromium, см. итоговый раздел ниже |
 
 Сборка выводит существующее предупреждение Next.js об устаревшем имени `middleware`; оно не связано с consent или AI-UP.
 
 ## Оставшиеся риски
 
-1. Нужна ручная визуальная проверка баннера и modal на desktop/mobile в доступном браузере.
-2. Нужна отдельная проверка текста политики ответственным за правовые требования.
-3. Нужна отдельная архитектурная договорённость по полной блокировке загрузчиков Метрики и GA.
-4. Production env для AI-UP не задан.
-5. Перед любым запуском нужно повторно проверить источники и лимиты AI-UP.
+1. Нужна отдельная проверка текста политики ответственным за правовые требования.
+2. Нужна отдельная архитектурная договорённость по полной блокировке загрузчиков Метрики и GA.
+3. Production env для AI-UP не задан.
+4. Перед любым запуском нужно повторно проверить источники и лимиты AI-UP.
 
 ## Можно ли включать production pixel
 
@@ -93,11 +92,11 @@ AI-UP script отсутствует в DOM, пока `marketing !== true`. По�
 
 Consent blocker устранён в коде, но production activation остаётся отдельным шагом. До включения нужны:
 
-1. ручная browser-проверка интерфейса;
+1. consent-only deploy и live browser-проверка;
 2. согласование политики и режима текущей аналитики;
 3. повторный read-only аудит AI-UP sources;
 4. настройка production env без раскрытия значений;
-5. отдельное явное подтверждение владельца на commit/push/deploy и включение feature flag.
+5. отдельное явное подтверждение владельца на включение feature flag.
 
 ## Следующий безопасный порядок
 
@@ -109,13 +108,15 @@ Consent blocker устранён в коде, но production activation ост�
 6. Получить отдельное подтверждение владельца.
 7. Только затем выполнить штатный GitHub Actions deploy.
 
-## Visual browser audit retry — 2026-06-20
+## Visual browser audit retry — 2026-06-20 (историческая блокировка)
 
 ### Статус
 
 **`BLOCKED`: визуальная browser-проверка не завершена.**
 
 Встроенный браузерный контур не подключился к локальной странице: ошибка возникла до открытия localhost и до выполнения каких-либо действий на сайте. Production-сайт, AI-UP, Bitrix24, Метрика, Директ, env и лимиты не изменялись.
+
+Этот статус относится только к Browser Plugin и заменён итоговым успешным fallback Playwright QA ниже.
 
 ### Что повторно проверено без browser automation
 
@@ -163,3 +164,99 @@ Consent blocker устранён в коде, но production activation ост�
 4. Проверить live consent interface на desktop и mobile.
 5. Проверить accept, reject, custom и повторное открытие из футера.
 6. Оставить AI-UP activation отдельным будущим этапом.
+
+## Fallback Playwright browser QA — 2026-06-20
+
+### Итоговый статус
+
+**`PASS` для локального consent interface и AI-UP consent gate.**
+
+Проверка выполнена реальным Chromium через временный Playwright-контур без Browser Plugin. Production deploy, production env и внешние кабинеты не изменялись.
+
+### Viewport и evidence
+
+- desktop: `1440×900`;
+- mobile: `390×844`;
+- screenshots: `promotion/site/local_artifacts/consent-browser-qa-2026-06-20/`;
+- машинные результаты:
+  - `disabled-results.json` — 32 успешные проверки;
+  - `enabled-results.json` — 36 успешных проверок.
+
+Сохранены кадры первого визита, окна настроек, состояния после accept/reject и мобильного футера для disabled и test-enabled сборок.
+
+### Проверенные сценарии
+
+| Сценарий | Результат |
+|---|---|
+| Первый визит показывает баннер | PASS |
+| `Принять все` сохраняет analytics/marketing = true | PASS |
+| Выбор сохраняется после reload | PASS |
+| Баннер не появляется повторно после сохранения | PASS |
+| `Отклонить необязательные` сохраняет оба значения false | PASS |
+| `Настроить` открывает modal | PASS |
+| Necessary включено и disabled | PASS |
+| Analytics и marketing переключаются независимо | PASS |
+| Комбинация analytics=true / marketing=false | PASS |
+| Комбинация analytics=false / marketing=true | PASS |
+| Повторное открытие из футера | PASS |
+| Desktop без горизонтального overflow | PASS |
+| Mobile без горизонтального overflow | PASS |
+| Mobile-кнопки помещаются в viewport | PASS |
+| Баннер не пересекает видимые header/hero CTA | PASS |
+| Console/page errors в изолированной consent-сборке | PASS, отсутствуют |
+
+### AI-UP gate
+
+Disabled mode:
+
+- script отсутствует в DOM;
+- AI-UP network request отсутствует;
+- marketing consent не может включить pixel без feature flag.
+
+Safe test-enabled mode:
+
+- использован только искусственный identifier;
+- внешний запрос перехвачен локально и не передавался в AI-UP;
+- без marketing consent script и request отсутствуют;
+- после marketing consent появляется ровно один script в текущем документе;
+- повторные consent events и повторное открытие настроек не создают второй script или request;
+- после reject и reload script отсутствует.
+
+Несколько запросов в полном test-run связаны с отдельными browser reload и новыми документами. Внутри одного документа защита от дублей подтверждена отдельными assertions.
+
+### Визуальный результат
+
+Визуальных дефектов consent UI не найдено:
+
+- desktop banner аккуратно расположен ниже hero CTA;
+- desktop modal читаем и не выходит за viewport;
+- mobile banner сохраняет доступность header и основных CTA;
+- mobile modal полностью помещается по ширине и высоте, элементы доступны;
+- футер и `Настройки cookies` не обрезаны;
+- текст русский, кнопки и переключатели читаемы.
+
+Формы с HTML `submit` на проверяемой странице не обнаружены; визуально баннер не перекрывает показанные CTA и навигацию.
+
+### Наблюдение по Метрике
+
+При первом production-like запуске с текущим локальным ID Метрики Chromium показал существующие CSP-ошибки для `mc.yandex.com`, тогда как CSP разрешает `mc.yandex.ru`. Это не связано с consent UI и не исправлялось из-за запрета менять Метрику в этой задаче.
+
+Для чистой проверки consent интерфейса обе локальные сборки были повторены с пустыми analytics env. В них console/page errors отсутствуют. CSP-наблюдение следует разобрать отдельной задачей до общего production preflight.
+
+### Можно ли переходить к production deploy только consent interface
+
+**Технически да, после отдельного явного подтверждения владельца.**
+
+Условия consent-only deploy:
+
+1. AI-UP feature flag остаётся `false`;
+2. production AI-UP ID и другие AI-UP env не задаются;
+3. deploy выполняется только штатным GitHub Actions процессом;
+4. после deploy выполняется live desktop/mobile проверка consent;
+5. AI-UP activation не входит в этот deploy.
+
+### Можно ли включать production AI-UP pixel сейчас
+
+**Нет.**
+
+Сначала нужны отдельный consent-only deploy, live QA, повторный preflight AI-UP sources/env и отдельное явное подтверждение владельца на включение pixel.
