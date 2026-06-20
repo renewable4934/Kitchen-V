@@ -1,7 +1,7 @@
 # Title: Site staging deploy workflow
 # Purpose: deploys promotion/site to the staging app instance on Aeza after staging branch updates.
 # Owner: Project team
-# Last updated: 2026-03-11
+# Last updated: 2026-06-19
 
 name: Site Deploy Staging
 
@@ -51,6 +51,8 @@ jobs:
       AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED: ${{ secrets.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED }}
       AIUP_GATEWAY_LIMITED_BATCH_ENABLED: ${{ secrets.AIUP_GATEWAY_LIMITED_BATCH_ENABLED }}
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      NEXT_PUBLIC_AIUP_PIXEL_ENABLED: ${{ vars.AIUP_PIXEL_ENABLED || 'false' }}
+      NEXT_PUBLIC_AIUP_PIXEL_ID: ${{ secrets.AIUP_PIXEL_ID }}
 
     steps:
       - name: Checkout repository
@@ -95,6 +97,8 @@ jobs:
           cat > "$RUNNER_TEMP/site.env" <<EOF
           NODE_ENV=production
           PORT=${APP_PORT}
+          NEXT_PUBLIC_AIUP_PIXEL_ENABLED=${NEXT_PUBLIC_AIUP_PIXEL_ENABLED}
+          NEXT_PUBLIC_AIUP_PIXEL_ID=${NEXT_PUBLIC_AIUP_PIXEL_ID}
           NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
           SUPABASE_URL=${SUPABASE_URL}

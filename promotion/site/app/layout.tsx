@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
 import Script from "next/script"
 
+import { AiUpPixel } from "@/components/ai-up-pixel"
 import { SiteAnalytics } from "@/components/site-analytics"
 import { loadSiteContent } from "@/lib/cms"
 
@@ -116,6 +117,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${_inter.variable} ${_playfair.variable} font-sans antialiased`}>
+        <AiUpPixel />
         <SiteAnalytics />
         {children}
       </body>

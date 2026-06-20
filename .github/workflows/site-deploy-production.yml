@@ -1,7 +1,7 @@
 # Title: Site production deploy workflow
 # Purpose: deploys promotion/site to the production app instance on Aeza after main branch updates.
 # Owner: Project team
-# Last updated: 2026-05-26
+# Last updated: 2026-06-20
 
 name: Site Deploy Production
 
@@ -53,6 +53,7 @@ jobs:
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
       NEXT_PUBLIC_GA_MEASUREMENT_ID: G-9J9TCX22S1
       NEXT_PUBLIC_YANDEX_METRIKA_ID: 108109755
+      NEXT_PUBLIC_AIUP_PIXEL_ENABLED: "false"
 
     steps:
       - name: Checkout repository
@@ -99,6 +100,7 @@ jobs:
           PORT=${APP_PORT}
           NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID}
           NEXT_PUBLIC_YANDEX_METRIKA_ID=${NEXT_PUBLIC_YANDEX_METRIKA_ID}
+          NEXT_PUBLIC_AIUP_PIXEL_ENABLED=${NEXT_PUBLIC_AIUP_PIXEL_ENABLED}
           NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
           SUPABASE_URL=${SUPABASE_URL}
