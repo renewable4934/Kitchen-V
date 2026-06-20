@@ -47,6 +47,7 @@
 41. Выполнен safety freeze local-only gateway: повторный secret scan и diff review не нашли секретов в коммитируемом наборе, `typecheck` и `test:aiup-gateway` зелёные, fallback на `Продажи` не найден, второй Bitrix write не выполнялся.
 42. Gateway расширен безопасным режимом `first_real_test` и выпущен на текущую инфраструктуру только для dry-run, но реальный AI-UP запуск остановлен: в проекте уже обнаружены `48` источников, `7` активных источников, телефонные источники и дневной лимит `56`, что нарушает согласованный контур `5 сайтов / без телефонов / 15 контактов`.
 43. Marketing-consent интерфейс подготовлен в коде сайта: есть явные accept/reject/custom сценарии, сохранение выбора, повторное открытие из футера и строгая связь AI-UP с категорией marketing; production pixel остаётся выключенным.
+44. Consent-only deploy candidate добавлен в `main`, но production release не активирован: GitHub Actions снова остановился на SSH upload, live-сайт остался на предыдущей версии, AI-UP pixel не включён.
 
 ## Core files
 Зачем сущность: базовые документы-навигаторы, которые поддерживают понятность проекта.
@@ -842,6 +843,15 @@
 - **Last updated:** 2026-06-09
 - **Lifecycle:** Active
 - **Next step:** Вернуть AI-UP проект к согласованному контуру `5 сайтов / без телефонов / лимит 15`, подключить только controlled gateway и только потом отдельно подтверждать реальный запуск.
+
+### Entry
+- **Path:** `crm/architecture/ai-up-consent-only-production-deploy-2026-06-20.md`
+- **Purpose (RU):** Отчёт о consent-only production deploy: preflight, безопасная конфигурация AI-UP, результат GitHub Actions, live-check и SSH blocker.
+- **Trigger:** После успешного Chromium QA владелец разрешил production deploy только consent interface при выключенном AI-UP pixel.
+- **Owner:** Вы / владелец сайта / проектная команда.
+- **Last updated:** 2026-06-20
+- **Lifecycle:** Active
+- **Next step:** Исправить SSH deploy key/user в GitHub production environment и повторить workflow без изменения AI-UP env.
 
 ### Entry
 - **Path:** `crm/architecture/ai-up-marketing-consent-interface-2026-06-20.md`
