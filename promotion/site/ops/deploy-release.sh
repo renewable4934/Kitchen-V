@@ -182,5 +182,11 @@ if [ "$healthy" -ne 1 ]; then
   exit 1
 fi
 
-find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5 | xargs -r rm -rf
+while IFS= read -r old_release; do
+  if [ -w "$old_release" ]; then
+    rm -rf "$old_release"
+  else
+    echo "Skipping legacy release without write access: $old_release"
+  fi
+done < <(find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5)
 echo "Release ${RELEASE_ID} is active."
