@@ -144,6 +144,8 @@ jobs:
       - name: Upload release package
         run: |
           set -euo pipefail
+          ssh -o StrictHostKeyChecking=accept-new -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
+            "sudo -n rm -f /tmp/site-release.tgz /tmp/site.env /tmp/deploy-release.sh"
           scp -o StrictHostKeyChecking=accept-new -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site-release.tgz" "${SSH_USER}@${SSH_HOST}:/tmp/site-release.tgz"
           scp -o StrictHostKeyChecking=accept-new -P "${SSH_PORT:-22}" "$RUNNER_TEMP/site.env" "${SSH_USER}@${SSH_HOST}:/tmp/site.env"
           scp -o StrictHostKeyChecking=accept-new -P "${SSH_PORT:-22}" "promotion/site/ops/deploy-release.sh" "${SSH_USER}@${SSH_HOST}:/tmp/deploy-release.sh"
