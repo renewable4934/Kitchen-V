@@ -147,7 +147,14 @@ cd "$RELEASE_DIR"
 npm ci
 npm run build
 activate_release "$RELEASE_DIR"
-$SYSTEMCTL_BIN restart "$SERVICE_NAME"
+if ! $SYSTEMCTL_BIN restart "$SERVICE_NAME"; then
+  echo "Service restart failed for release ${RELEASE_ID}. Rolling back." >&2
+  if [ -n "$previous_release" ] && [ -d "$previous_release" ]; then
+    activate_release "$previous_release"
+    $SYSTEMCTL_BIN restart "$SERVICE_NAME"
+  fi
+  exit 1
+fi
 sync_caddy_upstream
 
 healthy=0

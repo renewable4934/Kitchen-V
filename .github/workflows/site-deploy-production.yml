@@ -155,10 +155,21 @@ jobs:
             "set -euo pipefail
             deploy_owner=\$(stat -c '%U' '${APP_DIR}')
             deploy_group=\$(stat -c '%G' '${APP_DIR}')
+            current_release=\$(readlink -f '${APP_DIR}/current' || true)
+            if ! sudo -n systemctl is-active --quiet '${SERVICE_NAME}'; then
+              fallback_release=\$(find '${APP_DIR}/releases' -mindepth 1 -maxdepth 1 -type d ! -path \"\${current_release}\" -printf '%T@ %p\n' | sort -nr | head -n 1 | cut -d' ' -f2-)
+              if [ -n \"\${fallback_release}\" ]; then
+                sudo -n ln -sfn \"\${fallback_release}\" '${APP_DIR}/current'
+                sudo -n systemctl restart '${SERVICE_NAME}'
+              fi
+            fi
             sudo -n chown \"\${deploy_owner}:\${deploy_group}\" /tmp/site-release.tgz /tmp/site.env /tmp/deploy-release.sh
             sudo -n chmod 600 /tmp/site-release.tgz /tmp/site.env
             sudo -n chmod 700 /tmp/deploy-release.sh
-            sudo -n -u \"\${deploy_owner}\" env APP_DIR='${APP_DIR}' SERVICE_NAME='${SERVICE_NAME}' APP_PORT='${APP_PORT}' APP_DOMAIN='${APP_DOMAIN}' RELEASE_ARCHIVE='/tmp/site-release.tgz' ENV_FILE='/tmp/site.env' bash /tmp/deploy-release.sh"
+            if ! sudo -n -u \"\${deploy_owner}\" env APP_DIR='${APP_DIR}' SERVICE_NAME='${SERVICE_NAME}' APP_PORT='${APP_PORT}' APP_DOMAIN='${APP_DOMAIN}' RELEASE_ARCHIVE='/tmp/site-release.tgz' ENV_FILE='/tmp/site.env' bash /tmp/deploy-release.sh; then
+              sudo -n systemctl status '${SERVICE_NAME}' --no-pager -l || true
+              exit 1
+            fi"
 
       - name: Check public health endpoint
         if: env.HEALTHCHECK_URL != ''
