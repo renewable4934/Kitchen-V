@@ -2,7 +2,7 @@
 
 **Purpose:** Зафиксировать попытку выпуска consent interface на `pegasmebel.ru`, результат GitHub Actions и состояние live-сайта без включения AI-UP pixel.
 **Owner:** Владелец сайта / проектная команда.
-**Last updated:** 2026-06-20
+**Last updated:** 2026-06-21
 
 ## Итог
 
@@ -125,3 +125,80 @@ Production deploy заблокирован SSH-аутентификацией Gi
 **Нет.**
 
 Сначала consent interface должен быть фактически активирован на production и пройти live desktop/mobile QA. После этого нужен отдельный AI-UP activation preflight.
+
+## SSH recovery audit — 2026-06-21
+
+### Текущее состояние
+
+На начало проверки production IP временно не принимал соединения на портах `22`, `80`, `443`. Позже доступность сети восстановилась:
+
+- DNS `pegasmebel.ru` по-прежнему указывает на production IP;
+- TCP `22`, `80`, `443` снова стали доступны;
+- сервер принадлежит инфраструктуре Timeweb, а не Aeza;
+- в открытом аккаунте Aeza услуги отсутствуют;
+- войти в Timeweb Cloud владельцу текущими логином и паролем не удалось.
+
+### Что установлено по SSH
+
+Локальный SSH profile для production использует:
+
+- пользователя `max`;
+- отдельный ключ Timeweb VPS.
+
+Также локально присутствует отдельная пара ключей с назначением для GitHub Actions. Для обеих пар подтверждено, что локальный private key соответствует своему public key. Содержимое приватных ключей не читалось, не печаталось и не сохранялось в проект.
+
+Read-only SSH dry-run выполнялся командами уровня `whoami`, `hostname`, `pwd`. Результат:
+
+- ключ Timeweb VPS для пользователя `max` — `Permission denied`;
+- ключ GitHub Actions для пользователя `max` — `Permission denied`;
+- SSH dry-run не пройден.
+
+После нескольких последовательных попыток порт `22` кратковременно начал возвращать `Connection refused`. Возможная причина — server-side fail2ban или нестабильность SSH service. Дальнейший перебор пользователей и ключей остановлен.
+
+### Что пока нельзя проверить
+
+- точное значение GitHub production secret `SSH_USER`;
+- fingerprint ключа, сохранённого в GitHub production `SSH_PRIVATE_KEY`;
+- содержимое `~max/.ssh/authorized_keys`;
+- права и владельца `~max/.ssh` и `authorized_keys`;
+- состояние SSH service, firewall и fail2ban;
+- состояние сервера через Timeweb Cloud.
+
+GitHub secrets являются write-only, а авторизованного доступа к GitHub Settings в текущей browser-сессии нет. Доступа к Timeweb Cloud также нет.
+
+### Текущий точный blocker
+
+Deploy заблокирован отсутствием подтверждённого административного доступа к production-серверу и Timeweb Cloud.
+
+Сейчас нельзя безопасно определить, какое действие правильное:
+
+1. добавить public key GitHub Actions в `authorized_keys` пользователя `max`;
+2. заменить GitHub secret на private key уже разрешённого server key;
+3. исправить GitHub secret `SSH_USER`;
+4. восстановить SSH service/firewall/fail2ban через Timeweb console.
+
+Менять GitHub secret вслепую нельзя: ни один локальный ключ не прошёл server authentication.
+
+### Что требуется от владельца
+
+Нужно восстановить доступ хотя бы одним способом:
+
+1. войти в Timeweb Cloud и открыть server console; или
+2. получить рабочий SSH-доступ администратора/пользователя сервера; или
+3. восстановить логин Timeweb через штатную процедуру восстановления.
+
+После получения доступа:
+
+1. проверить состояние сервера и SSH service;
+2. проверить пользователя `max`;
+3. сверить fingerprints `authorized_keys` с GitHub Actions public key;
+4. добавить только правильный public key без удаления существующих ключей;
+5. выставить `700` для `~/.ssh` и `600` для `authorized_keys`;
+6. выполнить read-only SSH dry-run;
+7. только после `AUTH_OK` повторить GitHub Actions workflow.
+
+### Итог recovery
+
+**Статус: `BLOCKED`.**
+
+Повторный deploy не запускался. Server activation не выполнялась. AI-UP env, feature flag, project, sources, лимиты, Bitrix24, Метрика и Директ не менялись.
