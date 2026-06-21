@@ -174,10 +174,15 @@ jobs:
             fi"
 
       - name: Check public health endpoint
-        if: env.HEALTHCHECK_URL != ''
         run: |
           set -euo pipefail
-          curl --fail --show-error --silent --retry 10 --retry-delay 5 "$HEALTHCHECK_URL"
+          SITE_URL="${APP_DOMAIN}"
+          case "$SITE_URL" in
+            http://*|https://*) ;;
+            *) SITE_URL="https://${SITE_URL}" ;;
+          esac
+          SITE_URL="${SITE_URL%/}"
+          curl --fail --show-error --silent --retry 10 --retry-delay 5 "${SITE_URL}/api/health"
 
       - name: Check CMS drift after deploy
         working-directory: promotion/site
@@ -189,9 +194,6 @@ jobs:
             *) SITE_URL="https://${SITE_URL}" ;;
           esac
           SITE_URL="${SITE_URL%/}"
-          if [ -n "${HEALTHCHECK_URL:-}" ]; then
-            SITE_URL="${HEALTHCHECK_URL%/api/health}"
-          fi
           npm run check:cms-drift -- "$SITE_URL"
 
       - name: Check public mobile CTA freshness
