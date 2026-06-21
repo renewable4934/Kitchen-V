@@ -166,7 +166,8 @@ sync_caddy_upstream
 
 healthy=0
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  if curl --fail --show-error --silent "http://127.0.0.1:${APP_PORT}/api/health" >/dev/null; then
+  if curl --fail --show-error --silent "http://127.0.0.1:${APP_PORT}/api/health" >/dev/null \
+    && curl --fail --show-error --silent "http://127.0.0.1:${APP_PORT}/" >/dev/null; then
     healthy=1
     break
   fi
