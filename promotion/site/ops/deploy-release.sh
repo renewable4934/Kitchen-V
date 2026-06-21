@@ -149,6 +149,7 @@ npm run build
 activate_release "$RELEASE_DIR"
 if ! $SYSTEMCTL_BIN restart "$SERVICE_NAME"; then
   echo "Service restart failed for release ${RELEASE_ID}. Rolling back." >&2
+  $SYSTEMCTL_BIN status "$SERVICE_NAME" --no-pager -l || true
   if [ -n "$previous_release" ] && [ -d "$previous_release" ]; then
     activate_release "$previous_release"
     $SYSTEMCTL_BIN restart "$SERVICE_NAME"
