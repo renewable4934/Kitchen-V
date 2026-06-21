@@ -51,6 +51,7 @@ jobs:
       AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED: ${{ secrets.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED }}
       AIUP_GATEWAY_LIMITED_BATCH_ENABLED: ${{ secrets.AIUP_GATEWAY_LIMITED_BATCH_ENABLED }}
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      PUBLIC_SITE_URL: https://pegasmebel.ru
       NEXT_PUBLIC_GA_MEASUREMENT_ID: G-9J9TCX22S1
       NEXT_PUBLIC_YANDEX_METRIKA_ID: 108109755
       NEXT_PUBLIC_AIUP_PIXEL_ENABLED: "false"
@@ -176,40 +177,22 @@ jobs:
       - name: Check public health endpoint
         run: |
           set -euo pipefail
-          SITE_URL="${APP_DOMAIN}"
-          case "$SITE_URL" in
-            http://*|https://*) ;;
-            *) SITE_URL="https://${SITE_URL}" ;;
-          esac
-          SITE_URL="${SITE_URL%/}"
-          curl --fail --show-error --silent --retry 10 --retry-delay 5 "${SITE_URL}/api/health"
+          curl --fail --show-error --silent --retry 10 --retry-delay 5 "${PUBLIC_SITE_URL}/api/health"
 
       - name: Check CMS drift after deploy
         working-directory: promotion/site
         run: |
           set -euo pipefail
-          SITE_URL="${APP_DOMAIN}"
-          case "$SITE_URL" in
-            http://*|https://*) ;;
-            *) SITE_URL="https://${SITE_URL}" ;;
-          esac
-          SITE_URL="${SITE_URL%/}"
-          npm run check:cms-drift -- "$SITE_URL"
+          npm run check:cms-drift -- "$PUBLIC_SITE_URL"
 
       - name: Check public mobile CTA freshness
         run: |
           set -euo pipefail
-          SITE_URL="${APP_DOMAIN}"
-          case "$SITE_URL" in
-            http://*|https://*) ;;
-            *) SITE_URL="https://${SITE_URL}" ;;
-          esac
-          SITE_URL="${SITE_URL%/}"
           html="$(curl --fail --show-error --silent --location \
             --retry 10 --retry-delay 5 \
             -H 'Cache-Control: no-cache' \
             -A 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1' \
-            "${SITE_URL}/?deploy_mobile_cta_check=${GITHUB_SHA}")"
+            "${PUBLIC_SITE_URL}/?deploy_mobile_cta_check=${GITHUB_SHA}")"
           printf '%s' "$html" | grep -F 'href="tel:+79166700043"' >/dev/null
           printf '%s' "$html" | grep -F 'Позвонить' >/dev/null
           printf '%s' "$html" | grep -F 'aria-label="Позвонить +7 916 670-00-43"' >/dev/null
