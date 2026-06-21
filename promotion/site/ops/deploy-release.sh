@@ -183,11 +183,20 @@ if [ "$healthy" -ne 1 ]; then
   exit 1
 fi
 
+active_release="$(readlink -f "$CURRENT_LINK" || true)"
 while IFS= read -r old_release; do
+  if [ "$old_release" = "$active_release" ]; then
+    continue
+  fi
   if [ -w "$old_release" ]; then
     rm -rf "$old_release"
   else
     echo "Skipping legacy release without write access: $old_release"
   fi
-done < <(find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5)
+done < <(
+  find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+    | sort -nr \
+    | tail -n +6 \
+    | cut -d' ' -f2-
+)
 echo "Release ${RELEASE_ID} is active."
