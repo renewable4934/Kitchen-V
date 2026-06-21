@@ -12,7 +12,7 @@ type HeroSectionProps = {
 export function HeroSection({ content, assets, offerVariant, experimentKey }: HeroSectionProps) {
   const heroImage = assets[content.imageKey]
   const primaryCtaLabel =
-    content.primaryCta.label === "Выбрать опции" ? "Получить расчет" : content.primaryCta.label
+    content.primaryCta.href === "#configurator" ? "Получить расчет" : content.primaryCta.label
   const titleSeparatorIndex = content.title.indexOf("\n")
   const primaryTitle =
     titleSeparatorIndex === -1 ? content.title : content.title.slice(0, titleSeparatorIndex)
