@@ -146,6 +146,12 @@ fi
 cd "$RELEASE_DIR"
 npm ci
 npm run build
+
+CTA_GUARD="${SHARED_DIR}/check-release-cta.sh"
+if [ -x "$CTA_GUARD" ]; then
+  "$CTA_GUARD" "$RELEASE_DIR"
+fi
+
 activate_release "$RELEASE_DIR"
 if ! $SYSTEMCTL_BIN restart "$SERVICE_NAME"; then
   echo "Service restart failed for release ${RELEASE_ID}. Rolling back." >&2
