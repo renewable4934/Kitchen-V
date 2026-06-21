@@ -846,12 +846,12 @@
 
 ### Entry
 - **Path:** `crm/architecture/ai-up-consent-only-production-deploy-2026-06-20.md`
-- **Purpose (RU):** Отчёт о consent-only production deploy: preflight, безопасная конфигурация AI-UP, результат GitHub Actions, live-check и SSH blocker.
+- **Purpose (RU):** Итоговый отчёт о consent-only production deploy: восстановление GitHub Actions, безопасная конфигурация AI-UP и live desktop/mobile QA.
 - **Trigger:** После успешного Chromium QA владелец разрешил production deploy только consent interface при выключенном AI-UP pixel.
 - **Owner:** Вы / владелец сайта / проектная команда.
-- **Last updated:** 2026-06-20
+- **Last updated:** 2026-06-21
 - **Lifecycle:** Active
-- **Next step:** Исправить SSH deploy key/user в GitHub production environment и повторить workflow без изменения AI-UP env.
+- **Next step:** Провести отдельный read-only preflight AI-UP activation; pixel и AI-UP project не включать без нового явного подтверждения владельца.
 
 ### Entry
 - **Path:** `crm/architecture/ai-up-marketing-consent-interface-2026-06-20.md`

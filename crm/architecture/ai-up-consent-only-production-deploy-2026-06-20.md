@@ -1,204 +1,145 @@
 # AI-UP consent-only production deploy
 
-**Purpose:** Зафиксировать попытку выпуска consent interface на `pegasmebel.ru`, результат GitHub Actions и состояние live-сайта без включения AI-UP pixel.
+**Purpose:** Зафиксировать выпуск consent interface на `pegasmebel.ru`, восстановление штатного GitHub Actions deploy и live-проверку без включения AI-UP pixel.
 **Owner:** Владелец сайта / проектная команда.
 **Last updated:** 2026-06-21
 
 ## Итог
 
-**Статус: `FAILED / NOT DEPLOYED`.**
+**Статус: `DEPLOYED / LIVE QA PASS`.**
 
-Consent-only кандидат успешно добавлен в `main`, но GitHub Actions остановился на загрузке release по SSH. Активация release на сервере не выполнялась, поэтому consent interface на live-сайте пока отсутствует.
+Consent interface развёрнут на production штатным путём `GitHub -> GitHub Actions -> Timeweb server`.
 
-AI-UP pixel не включён. AI-UP project, лимиты, Bitrix24, Директ и Метрика не менялись.
+Финальный production commit: `1c6e64ee`.
 
-## Deploy candidate
+Финальный workflow:
 
-- branch: `codex/consent-only-production-deploy`;
-- production commit: `ef12fce6`;
-- base: актуальный на момент подготовки `origin/main`;
-- push в `main`: выполнен;
-- workflow: `Site Deploy Production`;
-- workflow run: `27882208220`;
-- начало run: `2026-06-20 22:57:07 +03`;
-- завершение run: `2026-06-20 22:57:58 +03`;
-- conclusion: `failure`.
+- `Site Deploy Production #121`;
+- run ID: `27917334586`;
+- conclusion: `success`;
+- сайт: `https://pegasmebel.ru/`;
+- главная страница: HTTP `200`;
+- health endpoint: HTTP `200`;
+- проверенный JS/CSS asset: HTTP `200`.
+
+AI-UP pixel остался выключен. AI-UP project, sources, лимиты, Bitrix24, Директ и Метрика не менялись.
 
 ## AI-UP production safety
 
-Production workflow для этого кандидата:
+Production workflow:
 
 - жёстко задаёт `NEXT_PUBLIC_AIUP_PIXEL_ENABLED=false`;
-- не читает и не записывает `AIUP_PIXEL_ID`;
-- не добавляет production AI-UP ID, snippet, token или secret;
+- не передаёт `NEXT_PUBLIC_AIUP_PIXEL_ID`;
+- не добавляет AI-UP ID, snippet или token;
 - не включает AI-UP project или sources.
 
-Значения секретов и существующих env в отчёт и логи не выводились.
+Live Chromium QA подтвердил:
 
-Текущее содержимое server env независимо не прочитано из-за того же SSH blocker. Подтверждено, что новая попытка не передала AI-UP ID и не активировала новый runtime env.
+- AI-UP script в DOM отсутствует;
+- AI-UP network requests отсутствуют;
+- после `marketing=true` AI-UP также не загружается, потому что feature flag выключен.
+
+Секреты, private keys, cookies и реальные AI-UP identifiers в отчёт, Git diff и terminal output не выводились.
 
 ## Проверки до deploy
 
 | Проверка | Результат |
 |---|---|
-| Нужные consent/pixel commits присутствуют в истории кандидата | PASS |
-| Кандидат собран от актуального `origin/main` | PASS |
-| Production AI-UP feature flag | PASS, жёстко `false` |
-| Production AI-UP ID в deploy candidate | PASS, отсутствует |
-| Текущий server env | Не проверен напрямую: нет SSH-аутентификации |
-| `npm ci` | PASS |
 | TypeScript typecheck | PASS |
 | Consent tests | PASS, 7/7 |
+| AI-UP gateway tests | PASS, 24/24 |
 | Production build | PASS |
+| YAML/actionlint | PASS |
+| Shell syntax deploy script | PASS |
 | `git diff --check` | PASS |
+| AI-UP feature flag | PASS, `false` |
+| Production AI-UP ID | PASS, не добавлялся |
+
+Команда `npm test` отсутствует в проекте. Вместо неё выполнены существующие `test:consent` и `test:aiup-gateway`.
 
 `npm ci` сообщил о существующих package vulnerabilities. Автоматический `npm audit fix` не выполнялся, поскольку это отдельный scope.
 
-## GitHub Actions
+## Восстановление deploy
 
-Успешные шаги:
+В ходе выпуска последовательно устранены реальные production blockers:
 
-1. checkout;
-2. setup Node.js;
-3. install dependencies;
-4. typecheck;
-5. production build;
-6. deploy secret presence validation;
-7. runtime env preparation;
-8. release archive preparation;
-9. SSH host configuration.
+1. GitHub Actions SSH user/key приведены в соответствие с рабочим Timeweb SSH-доступом.
+2. Release activation запускается от владельца `APP_DIR`, поэтому файлы и server env доступны сервисному пользователю.
+3. Временные upload-файлы безопасно очищаются перед новой загрузкой.
+4. При ошибке запуска нового release выполняется автоматический rollback.
+5. Server CTA guard запускается до переключения `current`.
+6. Удалён legacy hero CTA literal, который блокировал CTA guard, без изменения пользовательской кнопки `Получить расчет`.
+7. Cleanup пропускает legacy release без write-доступа.
+8. Cleanup сортирует releases по времени и никогда не удаляет активный release.
+9. Health-check проверяет не только API, но и главную страницу.
+10. Публичные deploy-checks используют канонический адрес `https://pegasmebel.ru`, не полагаясь на устаревшие значения старых доменов.
 
-Неуспешный шаг:
+Во время диагностики один новый release кратко дал HTTP `500`; автоматический recovery вернул рабочий manual-restore release. После исправления cleanup финальный deploy завершился успешно, а HTML, JS и CSS проверены с HTTP `200`.
 
-- `Upload release package`.
+## Live consent QA
 
-Пропущенные шаги:
+Проверка выполнена реальным headless Chromium после успешного deploy.
 
-- server release activation;
-- public health check;
-- CMS drift check;
-- public mobile CTA check.
+Viewports:
 
-Локальный SSH-доступ тем же публичным адресом также не прошёл аутентификацию. Значения ключей и пользователей не раскрывались.
+- desktop: `1440x900`;
+- mobile: `390x844`.
 
-## Live-check после run
-
-Проверка `https://pegasmebel.ru/` после завершения run:
-
-| Проверка | Результат |
+| Сценарий | Результат |
 |---|---|
-| Сайт отвечает HTTP 200 | PASS |
-| Consent banner присутствует на live | FAIL, отсутствует |
-| Новый AI-UP CSP source присутствует | FAIL, отсутствует |
-| AI-UP script присутствует в HTML | PASS, отсутствует |
-| AI-UP pixel включён | Нет |
+| Первый визит показывает consent banner | PASS |
+| Desktop без горизонтального overflow | PASS |
+| Mobile без горизонтального overflow | PASS |
+| Mobile-кнопки полностью доступны | PASS |
+| `Принять все` сохраняет analytics/marketing = true | PASS |
+| `Отклонить необязательные` сохраняет оба значения false | PASS |
+| `Настроить` открывает ручные настройки | PASS |
+| Necessary включено и недоступно для отключения | PASS |
+| Analytics и marketing переключаются отдельно | PASS |
+| Custom analytics=true / marketing=false сохраняется | PASS |
+| Выбор сохраняется после reload | PASS |
+| Баннер не появляется повторно после сохранения | PASS |
+| `Настройки cookies` в футере повторно открывает окно | PASS |
+| AI-UP script до consent | PASS, отсутствует |
+| AI-UP script после marketing consent | PASS, отсутствует при disabled flag |
+| AI-UP network requests | PASS, отсутствуют |
+| Page errors desktop/mobile | PASS, отсутствуют |
 
-Live-сайт продолжает обслуживать предыдущий release.
+Mobile modal помещается в viewport; баннер и кнопки не создают горизонтальный скролл.
 
-## Метрика
+## Existing analytics observations
 
-Метрика не менялась. Ранее обнаруженное CSP-наблюдение для `mc.yandex.com` остаётся отдельным existing issue и не исправлялось в этом deploy.
+В desktop Chromium остались существующие console/network CSP-наблюдения аналитики, включая ранее зафиксированный `mc.yandex.com`. Они не связаны с consent UI и не исправлялись в этом deploy.
+
+Метрика, GA, рекламные кампании и бюджет не менялись.
 
 ## Что не менялось
 
 - AI-UP project;
 - AI-UP sources и лимиты;
 - production AI-UP ID;
+- AI-UP feature flag, он остался `false`;
 - Bitrix24;
 - Яндекс Директ и рекламный бюджет;
 - настройки Метрики;
 - staging environment.
 
-## Blocker
-
-Production deploy заблокирован SSH-аутентификацией GitHub Actions при `scp`.
-
-Перед повторным run нужно:
-
-1. проверить, что private deploy key в GitHub production environment соответствует public key на сервере;
-2. проверить SSH user и права на вход;
-3. не менять AI-UP env;
-4. повторить workflow только после исправления deploy access.
-
 ## Можно ли переходить к следующему preflight перед AI-UP activation
+
+**Да, к отдельному read-only preflight можно переходить.**
+
+Consent interface находится на production и прошёл live desktop/mobile QA. При этом production AI-UP pixel включать сейчас нельзя автоматически.
+
+Следующий этап должен отдельно подтвердить:
+
+1. официальный AI-UP pixel identifier/snippet;
+2. точные production env без раскрытия значений;
+3. безопасный состав активных AI-UP sources;
+4. отдельное разрешение владельца на feature flag;
+5. наблюдение за первой идентификацией без создания нежелательных CRM-действий.
+
+## Можно ли включать production AI-UP pixel сейчас
 
 **Нет.**
 
-Сначала consent interface должен быть фактически активирован на production и пройти live desktop/mobile QA. После этого нужен отдельный AI-UP activation preflight.
-
-## SSH recovery audit — 2026-06-21
-
-### Текущее состояние
-
-На начало проверки production IP временно не принимал соединения на портах `22`, `80`, `443`. Позже доступность сети восстановилась:
-
-- DNS `pegasmebel.ru` по-прежнему указывает на production IP;
-- TCP `22`, `80`, `443` снова стали доступны;
-- сервер принадлежит инфраструктуре Timeweb, а не Aeza;
-- в открытом аккаунте Aeza услуги отсутствуют;
-- войти в Timeweb Cloud владельцу текущими логином и паролем не удалось.
-
-### Что установлено по SSH
-
-Локальный SSH profile для production использует:
-
-- пользователя `max`;
-- отдельный ключ Timeweb VPS.
-
-Также локально присутствует отдельная пара ключей с назначением для GitHub Actions. Для обеих пар подтверждено, что локальный private key соответствует своему public key. Содержимое приватных ключей не читалось, не печаталось и не сохранялось в проект.
-
-Read-only SSH dry-run выполнялся командами уровня `whoami`, `hostname`, `pwd`. Результат:
-
-- ключ Timeweb VPS для пользователя `max` — `Permission denied`;
-- ключ GitHub Actions для пользователя `max` — `Permission denied`;
-- SSH dry-run не пройден.
-
-После нескольких последовательных попыток порт `22` кратковременно начал возвращать `Connection refused`. Возможная причина — server-side fail2ban или нестабильность SSH service. Дальнейший перебор пользователей и ключей остановлен.
-
-### Что пока нельзя проверить
-
-- точное значение GitHub production secret `SSH_USER`;
-- fingerprint ключа, сохранённого в GitHub production `SSH_PRIVATE_KEY`;
-- содержимое `~max/.ssh/authorized_keys`;
-- права и владельца `~max/.ssh` и `authorized_keys`;
-- состояние SSH service, firewall и fail2ban;
-- состояние сервера через Timeweb Cloud.
-
-GitHub secrets являются write-only, а авторизованного доступа к GitHub Settings в текущей browser-сессии нет. Доступа к Timeweb Cloud также нет.
-
-### Текущий точный blocker
-
-Deploy заблокирован отсутствием подтверждённого административного доступа к production-серверу и Timeweb Cloud.
-
-Сейчас нельзя безопасно определить, какое действие правильное:
-
-1. добавить public key GitHub Actions в `authorized_keys` пользователя `max`;
-2. заменить GitHub secret на private key уже разрешённого server key;
-3. исправить GitHub secret `SSH_USER`;
-4. восстановить SSH service/firewall/fail2ban через Timeweb console.
-
-Менять GitHub secret вслепую нельзя: ни один локальный ключ не прошёл server authentication.
-
-### Что требуется от владельца
-
-Нужно восстановить доступ хотя бы одним способом:
-
-1. войти в Timeweb Cloud и открыть server console; или
-2. получить рабочий SSH-доступ администратора/пользователя сервера; или
-3. восстановить логин Timeweb через штатную процедуру восстановления.
-
-После получения доступа:
-
-1. проверить состояние сервера и SSH service;
-2. проверить пользователя `max`;
-3. сверить fingerprints `authorized_keys` с GitHub Actions public key;
-4. добавить только правильный public key без удаления существующих ключей;
-5. выставить `700` для `~/.ssh` и `600` для `authorized_keys`;
-6. выполнить read-only SSH dry-run;
-7. только после `AUTH_OK` повторить GitHub Actions workflow.
-
-### Итог recovery
-
-**Статус: `BLOCKED`.**
-
-Повторный deploy не запускался. Server activation не выполнялась. AI-UP env, feature flag, project, sources, лимиты, Bitrix24, Метрика и Директ не менялись.
+Consent-only deploy завершён, но AI-UP activation остаётся отдельным действием и требует нового явного подтверждения владельца.
