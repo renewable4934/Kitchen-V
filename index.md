@@ -860,7 +860,16 @@
 - **Owner:** Вы / владелец сайта / CRM-ответственный.
 - **Last updated:** 2026-06-22
 - **Lifecycle:** Active
-- **Next step:** Не включать AI-UP; сначала остановить пять активных competitor sources и отдельно подготовить безопасный env-driven workflow для pixel.
+- **Next step:** Исторический single-source вывод пересмотрен после нового бизнес-решения; использовать актуальный six-source preflight ниже.
+
+### Entry
+- **Path:** `crm/architecture/ai-up-six-source-activation-preflight-2026-06-21.md`
+- **Purpose (RU):** Preflight нового бизнес-контура `pegasmebel.ru` плюс пять competitor sources: fresh AI-UP state, legal gate, Bitrix quarantine requirements, workflow readiness и безопасные варианты запуска.
+- **Trigger:** Владелец утвердил получение идентификаций со всех шести сайтов, поэтому прежний single-source вывод потребовал пересмотра.
+- **Owner:** Вы / владелец проекта / CRM-ответственный / юридически ответственный.
+- **Last updated:** 2026-06-22
+- **Lifecycle:** Active
+- **Next step:** Не запускать AI-UP; получить документальное legal evidence для competitor contacts и доработать Bitrix route legal/no-call полями.
 
 ### Entry
 - **Path:** `crm/architecture/ai-up-marketing-consent-interface-2026-06-20.md`

@@ -1,7 +1,7 @@
 # Title: Site production deploy workflow
 # Purpose: deploys promotion/site to the production app instance on Aeza after main branch updates.
 # Owner: Project team
-# Last updated: 2026-06-21
+# Last updated: 2026-06-22
 
 name: Site Deploy Production
 
@@ -54,7 +54,8 @@ jobs:
       PUBLIC_SITE_URL: https://pegasmebel.ru
       NEXT_PUBLIC_GA_MEASUREMENT_ID: G-9J9TCX22S1
       NEXT_PUBLIC_YANDEX_METRIKA_ID: 108109755
-      NEXT_PUBLIC_AIUP_PIXEL_ENABLED: "false"
+      NEXT_PUBLIC_AIUP_PIXEL_ENABLED: ${{ vars.AIUP_PIXEL_ENABLED || 'false' }}
+      NEXT_PUBLIC_AIUP_PIXEL_ID: ${{ secrets.AIUP_PIXEL_ID }}
 
     steps:
       - name: Checkout repository
@@ -66,6 +67,24 @@ jobs:
           node-version: 20.18.1
           cache: npm
           cache-dependency-path: promotion/site/package-lock.json
+
+      - name: Validate AI-UP pixel config
+        run: |
+          set -euo pipefail
+          case "$NEXT_PUBLIC_AIUP_PIXEL_ENABLED" in
+            false)
+              ;;
+            true)
+              if [ -z "${NEXT_PUBLIC_AIUP_PIXEL_ID:-}" ]; then
+                echo "AI-UP pixel is enabled but its required public identifier is missing." >&2
+                exit 1
+              fi
+              ;;
+            *)
+              echo "AI-UP pixel feature flag must be true or false." >&2
+              exit 1
+              ;;
+          esac
 
       - name: Install dependencies
         working-directory: promotion/site
@@ -102,6 +121,7 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID}
           NEXT_PUBLIC_YANDEX_METRIKA_ID=${NEXT_PUBLIC_YANDEX_METRIKA_ID}
           NEXT_PUBLIC_AIUP_PIXEL_ENABLED=${NEXT_PUBLIC_AIUP_PIXEL_ENABLED}
+          NEXT_PUBLIC_AIUP_PIXEL_ID=${NEXT_PUBLIC_AIUP_PIXEL_ID}
           NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
           SUPABASE_URL=${SUPABASE_URL}
