@@ -854,6 +854,15 @@
 - **Next step:** Провести отдельный read-only preflight AI-UP activation; pixel и AI-UP project не включать без нового явного подтверждения владельца.
 
 ### Entry
+- **Path:** `crm/architecture/ai-up-production-activation-preflight-2026-06-21.md`
+- **Purpose (RU):** Свежий read-only preflight live-сайта, consent gate, production env-контракта, AI-UP sources и маршрута Bitrix24 перед возможным микро-включением pixel.
+- **Trigger:** После успешного consent-only production deploy понадобилось проверить актуальный кабинет AI-UP и убедиться, что запуск ограничен только разрешённым source.
+- **Owner:** Вы / владелец сайта / CRM-ответственный.
+- **Last updated:** 2026-06-22
+- **Lifecycle:** Active
+- **Next step:** Не включать AI-UP; сначала остановить пять активных competitor sources и отдельно подготовить безопасный env-driven workflow для pixel.
+
+### Entry
 - **Path:** `crm/architecture/ai-up-marketing-consent-interface-2026-06-20.md`
 - **Purpose (RU):** Отчёт о реализации баннера и настроек cookies, хранении выбора, связи marketing consent с AI-UP pixel и browser QA.
 - **Trigger:** Production preflight выявил отсутствие полноценного интерфейса marketing consent как главный блокер.
