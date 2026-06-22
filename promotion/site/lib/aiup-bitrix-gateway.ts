@@ -463,7 +463,8 @@ function resolveGatewayEnv(deps: GatewayDependencies): GatewayEnv {
     env.bitrixWebhookUrl ??
       deps.bitrixWebhookUrl ??
       process.env.BITRIX24_AIUP_CRM_WEBHOOK_URL ??
-      process.env.BITRIX24_TEST_CRM_WEBHOOK_URL,
+      process.env.BITRIX24_TEST_CRM_WEBHOOK_URL ??
+      process.env.BITRIX24_WEBHOOK_URL,
   )
   const bitrixCategoryName = cleanString(process.env.AIUP_GATEWAY_BITRIX_CATEGORY_NAME) || AIUP_GATEWAY_BITRIX_CATEGORY_NAME
   const bitrixStageName = cleanString(process.env.AIUP_GATEWAY_BITRIX_STAGE_NAME) || AIUP_GATEWAY_BITRIX_STAGE_NAME
