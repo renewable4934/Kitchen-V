@@ -13,6 +13,7 @@ import {
   AIUP_GATEWAY_FIELD_LABELS,
   AIUP_GATEWAY_MANUAL_GATE_REQUIRED,
   AIUP_GATEWAY_MODE_REQUIRED,
+  AIUP_GATEWAY_SAFE_MANAGER_SCRIPT,
   AIUP_GATEWAY_TEST_PHONE,
   buildAiupGatewayTestPayload,
   processAiupNativeWebhookRequest,
@@ -401,7 +402,7 @@ test("accepts first_real_test dry run with allowlisted source and region", async
     name: "TEST / AI-UP / first real test / не обрабатывать",
     phone: "+79991112233",
     source_name: "legokuhni.ru",
-    source_type: "site_competitor",
+    source_type: "behavioral_interest",
     source_url_or_phone: `https://${AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS[0]}/`,
     region: "Ростов-на-Дону / Ростовская область",
     status: "first_real_test",
@@ -516,7 +517,7 @@ test("rejects first_real_test source outside allowlist", async () => {
   const payload = buildAiupGatewayTestPayload("first-real-token", {
     mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     phone: "+79991112233",
-    source_type: "site_competitor",
+    source_type: "behavioral_interest",
     source_url_or_phone: "https://example.com/not-allowed",
     region: AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS[2],
     status: "first_real_test",
@@ -541,7 +542,7 @@ test("rejects first_real_test region outside allowlist", async () => {
   const payload = buildAiupGatewayTestPayload("first-real-token", {
     mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
     phone: "+79991112233",
-    source_type: "site_competitor",
+    source_type: "behavioral_interest",
     source_url_or_phone: `https://${AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS[1]}`,
     region: "Краснодар",
     status: "first_real_test",
@@ -604,6 +605,41 @@ test("forwards only allowlisted fields on write", async () => {
   assert.equal(result.body.bitrix.contact_action, "created")
   assert.ok(result.body.bitrix.contact_id)
   assert.equal(result.body.bitrix.contact_id, result.body.bitrix.created_contact_id)
+  assert.equal(addRequest?.body.includes("behavioral_interest"), false)
+})
+
+test("first real contact writes behavioral lead safeguards and safe manager script", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      dailyLimit: 6,
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const payload = buildAiupGatewayTestPayload("first-real-token", {
+    mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    phone: "+79991112233",
+    source_name: "legokuhni.ru",
+    source_type: "behavioral_interest",
+    source_url_or_phone: "https://legokuhni.ru/",
+    source_domain: "legokuhni.ru",
+    region: "Ростов-на-Дону / Ростовская область",
+    status: "bounded_real_test",
+  })
+
+  const result = await processAiupBitrixGatewayRequest(payload, {
+    ...harness.deps,
+    performWrite: true,
+  })
+
+  assert.equal(result.ok, true)
+  const addRequest = harness.capturedRequests.find((request) => request.method === "crm.deal.add")
+  assert.ok(addRequest)
+  const decodedBody = decodeURIComponent(addRequest.body.replace(/\+/g, "%20"))
+  assert.equal(decodedBody.includes("behavioral_interest"), true)
+  assert.equal(decodedBody.includes("not_direct_request"), true)
+  assert.equal(decodedBody.includes("soft_interest_check"), true)
+  assert.equal(decodedBody.includes("Do not claim competitor application: true"), true)
+  assert.equal(decodedBody.includes(AIUP_GATEWAY_SAFE_MANAGER_SCRIPT), true)
 })
 
 test("duplicate payload does not create second deal", async () => {
@@ -728,6 +764,12 @@ test("gateway constants do not drift from allowlist contract", async () => {
     "source_type",
     "source_name",
     "source_url_or_phone",
+    "source_domain",
+    "request_type",
+    "ai_up_source",
+    "call_script_required",
+    "opt_out_status",
+    "do_not_claim_competitor_application",
     "region",
     "channel",
     "status",

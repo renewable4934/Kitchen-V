@@ -25,6 +25,7 @@ export const AIUP_GATEWAY_ALLOWED_MODES = [
 ] as const
 export const AIUP_GATEWAY_BLOCKED_MODES = ["live", "prod", "production"] as const
 export const AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_SOURCE_HOSTS = [
+  "pegasmebel.ru",
   "legokuhni.ru",
   "kuhnihit.ru",
   "rosta-mebel.ru",
@@ -41,11 +42,19 @@ export const AIUP_GATEWAY_FIRST_REAL_TEST_ALLOWED_REGIONS = [
 export const AIUP_GATEWAY_BITRIX_CATEGORY_NAME = "Продажи"
 export const AIUP_GATEWAY_BITRIX_STAGE_NAME = "Новый AI-UP контакт"
 export const AIUP_GATEWAY_BITRIX_SOURCE_NAME = "AI-UP"
+export const AIUP_GATEWAY_SAFE_MANAGER_SCRIPT =
+  "Контакт поступил через сервис подбора аудитории по интересу к теме кухонь и ремонта. Мы не утверждаем, что вы оставляли заявку у нас или у какой-то конкретной компании. Если вопрос неактуален, я отмечу отказ и исключу номер из дальнейшей обработки."
 
 export const AIUP_GATEWAY_FIELD_LABELS = {
   sourceType: "AI-UP Source Type",
   sourceName: "AI-UP Source Name",
   sourceUrlOrPhone: "AI-UP Source URL or Phone",
+  sourceDomain: "AI-UP Source Domain",
+  requestType: "AI-UP Request Type",
+  aiUpSource: "AI-UP Source",
+  callScriptRequired: "AI-UP Call Script Required",
+  optOutStatus: "AI-UP Opt Out Status",
+  doNotClaimCompetitorApplication: "AI-UP Do Not Claim Competitor Application",
   region: "AI-UP Region",
   importedAt: "AI-UP Imported At",
   status: "AI-UP Status",
@@ -67,6 +76,12 @@ export const AIUP_GATEWAY_ALLOWED_FIELDS = [
   "source_type",
   "source_name",
   "source_url_or_phone",
+  "source_domain",
+  "request_type",
+  "ai_up_source",
+  "call_script_required",
+  "opt_out_status",
+  "do_not_claim_competitor_application",
   "region",
   "channel",
   "status",
@@ -102,6 +117,12 @@ type AiupGatewayNormalizedPayload = {
   source_name: string
   source_type: string
   source_url_or_phone: string
+  source_domain: string
+  request_type: string
+  ai_up_source: string
+  call_script_required: string
+  opt_out_status: string
+  do_not_claim_competitor_application: string
   status: string
 }
 
@@ -356,6 +377,13 @@ function toNormalizedPayload(payload: Record<AllowedFieldName, string>): AiupGat
     source_name: cleanString(payload.source_name),
     source_type: cleanString(payload.source_type),
     source_url_or_phone: cleanString(payload.source_url_or_phone),
+    source_domain: cleanString(payload.source_domain) || normalizeSourceHost(payload.source_url_or_phone) || "unknown_from_ai_up",
+    request_type: cleanString(payload.request_type) || "not_direct_request",
+    ai_up_source: cleanString(payload.ai_up_source) || "true",
+    call_script_required: cleanString(payload.call_script_required) || "soft_interest_check",
+    opt_out_status: cleanString(payload.opt_out_status) || "active",
+    do_not_claim_competitor_application:
+      cleanString(payload.do_not_claim_competitor_application) || "true",
     status: cleanString(payload.status),
   }
 }
@@ -373,6 +401,12 @@ function sanitizePayload(payload: AiupGatewayNormalizedPayload): AiupGatewaySani
     source_name: payload.source_name,
     source_type: payload.source_type,
     source_url_or_phone: payload.source_url_or_phone,
+    source_domain: payload.source_domain,
+    request_type: payload.request_type,
+    ai_up_source: payload.ai_up_source,
+    call_script_required: payload.call_script_required,
+    opt_out_status: payload.opt_out_status,
+    do_not_claim_competitor_application: payload.do_not_claim_competitor_application,
     status: payload.status,
   }
 }
@@ -504,8 +538,14 @@ function normalizeAiupNativeContact(
     phone: cleanString(contact["Телефон"]),
     region: "Ростовская область",
     source_name: sourceName,
-    source_type: "site_competitor",
+    source_type: "behavioral_interest",
     source_url_or_phone: sourceName,
+    source_domain: normalizeSourceHost(sourceName) || "unknown_from_ai_up",
+    request_type: "not_direct_request",
+    ai_up_source: "true",
+    call_script_required: "soft_interest_check",
+    opt_out_status: "active",
+    do_not_claim_competitor_application: "true",
     status: "first_real_test",
   }
 }
@@ -678,6 +718,17 @@ function validatePayloadForMode(payload: AiupGatewayNormalizedPayload, mode: Gat
   const phoneDigits = payload.phone.replace(/\D/g, "")
   if (phoneDigits.length < 11) {
     return "Phone must contain at least 11 digits in first_real_contact mode"
+  }
+
+  if (
+    payload.source_type !== "behavioral_interest" ||
+    payload.request_type !== "not_direct_request" ||
+    payload.ai_up_source !== "true" ||
+    payload.call_script_required !== "soft_interest_check" ||
+    payload.opt_out_status !== "active" ||
+    payload.do_not_claim_competitor_application !== "true"
+  ) {
+    return "AI-UP behavioral lead safeguards are required"
   }
 
   return null
@@ -873,6 +924,13 @@ function buildContactComment(payload: AiupGatewayNormalizedPayload, importedAt: 
     `Masked phone: ${maskPhone(payload.phone)}`,
     `Source type: ${payload.source_type}`,
     `Source name: ${payload.source_name}`,
+    `Source domain: ${payload.source_domain}`,
+    `Request type: ${payload.request_type}`,
+    `AI-UP source: ${payload.ai_up_source}`,
+    `Call script required: ${payload.call_script_required}`,
+    `Opt-out status: ${payload.opt_out_status}`,
+    `Do not claim competitor application: ${payload.do_not_claim_competitor_application}`,
+    `Safe manager script: ${AIUP_GATEWAY_SAFE_MANAGER_SCRIPT}`,
     `Channel: ${payload.channel || "-"}`,
     `Imported at: ${importedAt}`,
     `Batch ID: ${payload.batch_id}`,
@@ -895,6 +953,13 @@ function buildBitrixDealPayload(
     `Masked phone: ${maskPhone(payload.phone)}`,
     `Source type: ${payload.source_type}`,
     `Source name: ${payload.source_name}`,
+    `Source domain: ${payload.source_domain}`,
+    `Request type: ${payload.request_type}`,
+    `AI-UP source: ${payload.ai_up_source}`,
+    `Call script required: ${payload.call_script_required}`,
+    `Opt-out status: ${payload.opt_out_status}`,
+    `Do not claim competitor application: ${payload.do_not_claim_competitor_application}`,
+    `Safe manager script: ${AIUP_GATEWAY_SAFE_MANAGER_SCRIPT}`,
     `Channel: ${payload.channel || "-"}`,
     `Imported at: ${importedAt}`,
     `Batch ID: ${payload.batch_id}`,
@@ -924,6 +989,15 @@ function buildBitrixDealPayload(
   assignCustomField(
     AIUP_GATEWAY_FIELD_LABELS.sourceUrlOrPhone,
     payload.source_url_or_phone || payload.source_name || maskPhone(payload.phone),
+  )
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.sourceDomain, payload.source_domain)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.requestType, payload.request_type)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.aiUpSource, payload.ai_up_source)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.callScriptRequired, payload.call_script_required)
+  assignCustomField(AIUP_GATEWAY_FIELD_LABELS.optOutStatus, payload.opt_out_status)
+  assignCustomField(
+    AIUP_GATEWAY_FIELD_LABELS.doNotClaimCompetitorApplication,
+    payload.do_not_claim_competitor_application,
   )
   assignCustomField(AIUP_GATEWAY_FIELD_LABELS.region, payload.region)
   assignCustomField(AIUP_GATEWAY_FIELD_LABELS.importedAt, importedAt)
@@ -1600,6 +1674,12 @@ export function buildAiupGatewayTestPayload(
     source_name: "TEST_GATEWAY",
     source_type: "test_only_gateway",
     source_url_or_phone: "https://example.com/gateway-test",
+    source_domain: "example.com",
+    request_type: "not_direct_request",
+    ai_up_source: "true",
+    call_script_required: "soft_interest_check",
+    opt_out_status: "active",
+    do_not_claim_competitor_application: "true",
     status: "test_only_gateway",
     ...overrides,
   } satisfies Record<AllowedFieldName, string>
