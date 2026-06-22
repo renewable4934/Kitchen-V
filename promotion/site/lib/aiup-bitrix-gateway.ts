@@ -255,6 +255,7 @@ type GatewayDependencies = {
   bitrixWebhookUrl?: string
   env?: Partial<GatewayEnv>
   fetchImpl?: typeof fetch
+  nativeRequestToken?: string
   now?: () => Date
   randomUUID?: () => string
   readJournal?: typeof readAiupGatewayJournal
@@ -576,6 +577,21 @@ export async function processAiupNativeWebhookRequest(
         status: 403,
         body: {
           error: "AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED must be enabled",
+          ok: false,
+          request_id: requestId,
+        },
+      }
+    }
+
+    if (
+      !cleanString(options.nativeRequestToken) ||
+      cleanString(options.nativeRequestToken) !== env.firstRealApprovalToken
+    ) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "Invalid native webhook approval token",
           ok: false,
           request_id: requestId,
         },

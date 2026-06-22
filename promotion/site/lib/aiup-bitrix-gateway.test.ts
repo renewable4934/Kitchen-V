@@ -445,6 +445,7 @@ test("accepts AI-UP native webhook dry run for allowlisted source", async () => 
       },
       {
         ...harness.deps,
+        nativeRequestToken: "first-real-token",
         performWrite: false,
       },
     )
@@ -490,6 +491,7 @@ test("AI-UP native webhook does not write disallowed source", async () => {
       },
       {
         ...harness.deps,
+        nativeRequestToken: "first-real-token",
         performWrite: true,
       },
     )
@@ -498,6 +500,45 @@ test("AI-UP native webhook does not write disallowed source", async () => {
     assert.equal(result.body.ok, true)
     assert.equal(result.body.result, "verification_only")
     assert.equal(result.body.contacts_rejected, 1)
+    assert.equal(harness.capturedRequests.some((request) => request.method === "crm.deal.add"), false)
+  } finally {
+    if (originalNativeGate === undefined) {
+      delete process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED
+    } else {
+      process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED = originalNativeGate
+    }
+  }
+})
+
+test("AI-UP native webhook rejects missing request token", async () => {
+  const harness = createGatewayTestHarness({
+    overrideEnv: {
+      dailyLimit: 6,
+      mode: AIUP_GATEWAY_FIRST_REAL_TEST_MODE,
+    },
+  })
+  const originalNativeGate = process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED
+  process.env.AIUP_GATEWAY_NATIVE_WEBHOOK_ENABLED = "enabled"
+
+  try {
+    const result = await processAiupNativeWebhookRequest(
+      {
+        Контакты: [
+          {
+            Дата: "11.06.2026",
+            Источник: "legokuhni.ru",
+            Телефон: ["7", "999", "111", "22", "33"].join(""),
+          },
+        ],
+      },
+      {
+        ...harness.deps,
+        performWrite: true,
+      },
+    )
+
+    assert.equal(result.ok, false)
+    assert.equal(result.status, 403)
     assert.equal(harness.capturedRequests.some((request) => request.method === "crm.deal.add"), false)
   } finally {
     if (originalNativeGate === undefined) {

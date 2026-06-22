@@ -9,7 +9,10 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>
     const dryRunOnly = request.nextUrl.searchParams.get("dry_run") === "1"
     if (Array.isArray(body["Контакты"])) {
-      const result = await processAiupNativeWebhookRequest(body, { performWrite: !dryRunOnly })
+      const result = await processAiupNativeWebhookRequest(body, {
+        performWrite: !dryRunOnly,
+        nativeRequestToken: request.nextUrl.searchParams.get("approval_token") || "",
+      })
       return NextResponse.json(result.body, { status: result.status })
     }
     const result = await processAiupBitrixGatewayRequest(body, { performWrite: !dryRunOnly })
