@@ -1,7 +1,7 @@
 # Title: Kitchen_V Project Index
 **Purpose:** Человеческая карта проекта: где лежат материалы, зачем они нужны и что делать дальше.  
 **Owner:** Вы (основной пользователь), команда проекта (исполнители).  
-**Last updated:** 2026-06-09
+**Last updated:** 2026-07-05
 
 ## Project status
 1. Структура проекта приведена к единым сущностям: promotion, analytics, sales, crm, account-management, project-management, archive.
@@ -48,6 +48,7 @@
 42. Gateway расширен безопасным режимом `first_real_test` и выпущен на текущую инфраструктуру только для dry-run, но реальный AI-UP запуск остановлен: в проекте уже обнаружены `48` источников, `7` активных источников, телефонные источники и дневной лимит `56`, что нарушает согласованный контур `5 сайтов / без телефонов / 15 контактов`.
 43. Marketing-consent интерфейс подготовлен в коде сайта: есть явные accept/reject/custom сценарии, сохранение выбора, повторное открытие из футера и строгая связь AI-UP с категорией marketing; production pixel остаётся выключенным.
 44. Consent-only deploy candidate добавлен в `main`, но production release не активирован: GitHub Actions снова остановился на SSH upload, live-сайт остался на предыдущей версии, AI-UP pixel не включён.
+45. По AI-UP six-source activation подготовлен safe gateway и согласован контур из 6 sources, но реальный запуск 5 июля 2026 остановлен: нет управляемого доступа к свежему AI-UP кабинету, не подтверждено отключение прямой Bitrix integration и не подтверждён real-mode URL controlled gateway.
 
 ## Core files
 Зачем сущность: базовые документы-навигаторы, которые поддерживают понятность проекта.
@@ -870,6 +871,15 @@
 - **Last updated:** 2026-06-22
 - **Lifecycle:** Active
 - **Next step:** Не запускать AI-UP; получить документальное legal evidence для competitor contacts и доработать Bitrix route legal/no-call полями.
+
+### Entry
+- **Path:** `crm/architecture/ai-up-six-source-safe-activation-2026-07-05.md`
+- **Purpose (RU):** Отчёт о попытке довести AI-UP до безопасного запуска по шести утверждённым sources: что уже подготовлено, почему запуск остановлен и какие шаги нужны для завершения.
+- **Trigger:** Владелец попросил продолжить six-source activation и довести задачу до результата без раскрытия секретов и без небезопасного обхода gateway.
+- **Owner:** Вы / владелец проекта / CRM-ответственный.
+- **Last updated:** 2026-07-05
+- **Lifecycle:** Active
+- **Next step:** Восстановить управляемый доступ к AI-UP кабинету, отключить прямую Bitrix integration, подтвердить controlled gateway без dry-run и только потом включать project.
 
 ### Entry
 - **Path:** `crm/architecture/ai-up-marketing-consent-interface-2026-06-20.md`
